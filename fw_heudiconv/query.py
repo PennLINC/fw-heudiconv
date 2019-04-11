@@ -22,32 +22,34 @@ def acquisition_to_heudiconv(client, bson_id):
     for fileobj in acq.files:
         if fileobj.type not in CONVERTABLE_TYPES:
             continue
+        zip_info = acq.get_file_zip_info(fileobj.name)
         info = fileobj.info
         to_convert.append(DotDict(
-            example_dcm_file
-            series_id=info.get("")
-            dcm_dir_name
-            unspecified2
-            unspecified3
+            example_dcm_file=zip_info.members[0].path,
+            series_id=info.get(""),
+            dcm_dir_name=fileobj.name,
+            unspecified2='-',
+            unspecified3='-',
             dim1
             dim2
             dim3
-            dim4
-            TR = info.get("RepetitionTime"),
-            protocol_name
-            is_motion_corrected
-            is_derived
-            patient_id
-            study_description
-            referring_physician_name
-            series_description
+            dim4=len(zip_info.members), # We can use the number of files in the
+                                        # Or a corresponding dicom header field
+            TR=info.get("RepetitionTime"),
+            protocol_name=info.get("ProtocolName"),
+            is_motion_corrected="MOCO" in info.get("ImageType", []),
+            is_derived="DERIVED" in info.get("ImageType", []),
+            patient_id=info.get("PatientId"),
+            study_description=info.get("StudyDescription"),
+            referring_physician_name=info.get("ReferringPhysicianName", ""),
+            series_description=info.get("SeriesDescription"),
             sequence_name=info.get("SequenceName"),
-            image_type=info.get('ImageType'),
+            image_type=info.get("ImageType"),
             accession_number=info.get("StudyInstanceUID"),
-            patient_age=info.get(),
+            patient_age=info.get("PatientAge"),
             patient_sex=info.get("PatientSex"),
             date=info.get("AcquisitionDateTime"),
-            series_uid))
+            series_uid=info.get("SeriesInstanceUID")))
 
 class SeqInfo(object):
     """A mock of heudiconv's SeqInfo class.
