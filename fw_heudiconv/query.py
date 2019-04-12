@@ -99,21 +99,6 @@ def get_seq_info(client, session, context):
     return seq_info
 
 
-class SeqInfo(collections.OrderedDict):
-    """A mock of heudiconv's SeqInfo class.
-
-    Note, this will create seqinfos for all nifti, bval, bvec files,
-    even if they're not """
-    def __init__(self, session, context):
-        self._bson_id = bson_id
-        self.acquisitions = []
-        for acqnum, acquisition in enumerate(client.get(bson_id).acquisitions()):
-            acq = acquisition_to_heudiconv(client, acquisition.id)
-            acq.total_files_till_now = acqnum
-
-            self.acquisitions.append(acq)
-
-
 def query(client, project, subject=None, session=None, grouping=None):
     """Query the flywheel client for a project name
     This function uses the flywheel API to find the first match of a project
@@ -167,4 +152,3 @@ def query(client, project, subject=None, session=None, grouping=None):
             seq_infos[session.id] = get_seq_info(client, session, context)
 
     return seq_infos
-

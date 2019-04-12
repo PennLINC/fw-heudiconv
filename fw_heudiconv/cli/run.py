@@ -1,10 +1,9 @@
 import argparse
 import warnings
 import flywheel
+from ..query import query
 
 from heudiconv import utils
-
-import query
 
 
 def convert_to_bids(client, project_label, heuristic_path, subject_code,
@@ -21,8 +20,8 @@ def convert_to_bids(client, project_label, heuristic_path, subject_code,
         subject_code (str): The subject code
         session_label (str): The session label
     """
-    seq_infos = query.query(client, project_label, subject=subject_code,
-                            session=session_label)
+    seq_infos = query(client, project_label, subject=subject_code,
+                      session=session_label)
     heuristic = utils.load_heuristic(heuristic_path)
     BIDS_objects = {}
     for session_id, seq_info in seq_infos.items():
@@ -70,4 +69,3 @@ def main():
     args = parser.parse_args()
     project_label = ' '.join(args.project)
     convert_to_bids(fw, project_label, args.heuristic)
-
