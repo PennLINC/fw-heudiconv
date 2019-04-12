@@ -1,10 +1,16 @@
 import flywheel
 import sys
-from tqdm import tqdm
+import logging
+# from tqdm import tqdm
 import re
 import warnings
+import collections
+
+from heudiconv import utils
 
 CONVERTABLE_TYPES = ("bvec", "bval", "nifti")
+
+log = logging.getLogger(__name__)
 
 
 class DotDict(dict):
@@ -14,49 +20,91 @@ class DotDict(dict):
     __delattr__ = dict.__delitem__
 
 
-def acquisition_to_heudiconv(client, bson_id):
+def acquisition_to_heudiconv(acq, context):
     """Create a list of sequence objects for all convertable files in the acquistion."""
-    acq = client.get(bson_id)
     to_convert = []
     # Get the nifti file
+    dicoms = [f for f in acq.files if f.type == 'dicom']
+    if dicoms:
+        dicom = dicoms[0]
+        zip_info = acq.get_file_zip_info(dicom.name)
+        context['total'] += len(zip_info.members)
+    else:
+        zip_info = None
     for fileobj in acq.files:
+        log.debug('filename: %s', fileobj.name)
         if fileobj.type not in CONVERTABLE_TYPES:
             continue
-        zip_info = acq.get_file_zip_info(fileobj.name)
         info = fileobj.info
-        to_convert.append(DotDict(
-            example_dcm_file=zip_info.members[0].path,
-            series_id=info.get(""),
-            dcm_dir_name=fileobj.name,
-            unspecified2='-',
-            unspecified3='-',
-            dim1
-            dim2
-            dim3
-            dim4=len(zip_info.members), # We can use the number of files in the
-                                        # Or a corresponding dicom header field
-            TR=info.get("RepetitionTime"),
-            protocol_name=info.get("ProtocolName"),
-            is_motion_corrected="MOCO" in info.get("ImageType", []),
-            is_derived="DERIVED" in info.get("ImageType", []),
-            patient_id=info.get("PatientId"),
-            study_description=info.get("StudyDescription"),
-            referring_physician_name=info.get("ReferringPhysicianName", ""),
-            series_description=info.get("SeriesDescription"),
-            sequence_name=info.get("SequenceName"),
-            image_type=info.get("ImageType"),
-            accession_number=info.get("StudyInstanceUID"),
-            patient_age=info.get("PatientAge"),
-            patient_sex=info.get("PatientSex"),
-            date=info.get("AcquisitionDateTime"),
-            series_uid=info.get("SeriesInstanceUID")))
+        log.debug('uid: %s', info.get("SeriesInstanceUID"))
+        to_convert.append(utils.SeqInfo(
+            context['total'],
+            zip_info.members[0].path if zip_info else None,
+            info.get("SeriesID"),
+            fileobj.name,
+            '-',
+            '-',
+            0,
+            0,
+            0,
+            len(zip_info.members if zip_info else []),
+            # We can use the number of files in the
+            # Or a corresponding dicom header field
+            info.get("RepetitionTime"),
+            info.get("EchoTime"),
+            info.get("ProtocolName"),
+            "MOCO" in info.get("ImageType", []),
+            "DERIVED" in info.get("ImageType", []),
+            info.get("PatientID"),
+            info.get("StudyDescription"),
+            info.get("ReferringPhysicianName", ""),
+            info.get("SeriesDescription"),
+            info.get("SequenceName"),
+            str(info.get("ImageType")),
+            info.get("StudyInstanceUID"),
+            info.get("PatientAge"),
+            info.get("PatientSex"),
+            info.get("AcquisitionDateTime"),
+            info.get("SeriesInstanceUID")
+        ))
+        # We could possible add a context field which would contain flywheel
+        # hierarchy information like the subject code and session label
+        # or the information fields within them
+    return to_convert
 
-class SeqInfo(object):
+
+def get_seq_info(client, session, context):
+    """Returns a SeqInfo OrderedDict for a session
+
+    Args:
+        client (Client): The flywheel client
+        session (Session): A flywheel session object
+        context (dict): The flywheel heirarchy context to pass down
+
+    Returns:
+        OrderedDict: The seq info object
+    """
+    seq_info = collections.OrderedDict()
+    context['total'] = 0
+    for acquisition in session.acquisitions():
+        acquisition = client.get(acquisition.id)
+        context['acquisition'] = acquisition
+
+        for info in acquisition_to_heudiconv(acquisition, context):
+            log.debug('info: %s', info)
+            seq_info[info] = {}  # This would be set to a list of filepaths in
+                                 # heudiconv
+    log.debug('session=%s', session.label)
+    log.debug('Got %s seqinfos', len(seq_info.keys()))
+    return seq_info
+
+
+class SeqInfo(collections.OrderedDict):
     """A mock of heudiconv's SeqInfo class.
 
     Note, this will create seqinfos for all nifti, bval, bvec files,
     even if they're not """
-    def __init__(self, client, bson_id):
+    def __init__(self, session, context):
         self._bson_id = bson_id
         self.acquisitions = []
         for acqnum, acquisition in enumerate(client.get(bson_id).acquisitions()):
@@ -66,7 +114,7 @@ class SeqInfo(object):
             self.acquisitions.append(acq)
 
 
-def query(client, project, subject=None, session=None):
+def query(client, project, subject=None, session=None, grouping=None):
     """Query the flywheel client for a project name
     This function uses the flywheel API to find the first match of a project
     name. The name must be exact so make sure to type it as is on the
@@ -88,6 +136,7 @@ def query(client, project, subject=None, session=None):
         A list of SeqInfo objects
     """
     project_object = client.projects.find_first('label={0}'.format(project))
+    context = {'project': project_object}
 
     if project_object is None:
         print("Available projects are:\n")
@@ -95,14 +144,27 @@ def query(client, project, subject=None, session=None):
             print('%s' % (p.label))
         raise ValueError("Could not find \"{0}\" project on Flywheel!".format(project))
 
-    sessions = project_object.sessions()
 
     if subject is not None:
-        sessions = [session for session in sessions
-                    if session.subject.label == subject]
+        subject = project_object.subjects.find_one('code="{}"'.format(subject))
+        sessions = subject.sessions()
+    elif session is not None:
+        sessions = project_object.sessions.find('label="{}"'.format(session))
+    else:
+        sessions = project_object.sessions()
 
-    if session is not None:
-        sessions = [session for session in sessions
-                    if session.label == session]
+    seq_infos = collections.OrderedDict()
+    for session in sessions:
+        session = client.get(session.id)
+        context['subject'] = session.subject
+        if grouping is None:
+            # All seq infos should be top level if there is no grouping
+            for key, val in get_seq_info(client, session, context).items():
+                seq_infos[key] = val
+        else:
+            # For now only supports grouping with session
+            context['session'] = session
+            seq_infos[session.id] = get_seq_info(client, session, context)
 
-    return [SeqInfo(client, session.id) for session in sessions]
+    return seq_infos
+
