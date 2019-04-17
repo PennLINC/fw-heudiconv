@@ -55,16 +55,16 @@ def acquisition_to_heudiconv(acq, context):
             info.get("ProtocolName"),
             "MOCO" in info.get("ImageType", []),
             "DERIVED" in info.get("ImageType", []),
-            info.get("PatientID"),
+            info.get("PatientID", context['subject'].code),
             info.get("StudyDescription"),
             info.get("ReferringPhysicianName", ""),
             info.get("SeriesDescription"),
             info.get("SequenceName"),
-            str(info.get("ImageType")),
-            info.get("StudyInstanceUID"),
+            tuple(info.get("ImageType")),
+            info.get("AccessionNumber"),
             info.get("PatientAge"),
             info.get("PatientSex"),
-            info.get("AcquisitionDateTime"),
+            info.get("AcquisitionDate"),
             info.get("SeriesInstanceUID")
         ))
         # We could possible add a context field which would contain flywheel
@@ -157,13 +157,13 @@ def query(client, project, subject=None, session=None, grouping=None):
     for session in sessions:
         session = client.get(session.id)
         context['subject'] = session.subject
+        context['session'] = session
         if grouping is None:
             # All seq infos should be top level if there is no grouping
             for key, val in get_seq_info(client, session, context).items():
                 seq_infos[key] = val
         else:
             # For now only supports grouping with session
-            context['session'] = session
             seq_infos[session.id] = get_seq_info(client, session, context)
 
     return seq_infos
