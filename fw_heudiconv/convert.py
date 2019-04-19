@@ -9,7 +9,7 @@ info = {
 }
 id = {'locator': 'unknown', 'session': 'None', 'subject': '20448'}
 """
-def convert(_id, info):
+def convert(info):
     """Using an id and an info object, will format it into a flywheel BIDS
     standard object
 
@@ -35,5 +35,3 @@ def convert(_id, info):
             'valid': True,
             'ignore': 'dup' in os.path.basename(full_path)
         }
-
-
