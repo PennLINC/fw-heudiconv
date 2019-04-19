@@ -20,12 +20,11 @@ def convert_to_bids(client, project_label, heuristic_path, subject_code=None, se
         subject_code (str): The subject code
         session_label (str): The session label
     """
-    seq_infos = query(client, project_label, subject=subject_code,
-                      session=session_label)
+    seq_infos = query(client, project_label, subject=subject_code, session=session_label)
     heuristic = utils.load_heuristic(heuristic_path)
     BIDS_objects = {}
     to_rename = heuristic.infotodict(seq_infos)
-    errors = apply_conversion(to_rename, subject_code, session_label, verbose=True)
+    errors = apply_conversion(client, to_rename, subject_code, session_label, verbose=True)
     print(pd.DataFrame(errors))
 
 
@@ -46,8 +45,11 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
     if sess_label is None:
         sess_label = client.get(all_acquisitions[0].parents['session']).label
 
+    if verbose:
+        print("\nUpdating BIDS info for subject {} session {}:".format(subj_label, sess_label))
+        print("=========================================================")
     for key, val in to_rename.items():
-        if val is None:
+        if not val:
             continue
 
         # make a bids dictionary
@@ -71,8 +73,10 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
             continue
 
         for f in files:
-            print("old bids:")
-            print(f.info['BIDS'])
+
+            if verbose:
+                print("\n--------")
+                print(f.name, "\n")
 
             # special check for magnitude files
             if "e1.nii.gz" in f.name:
@@ -82,12 +86,9 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
             else:
                 suffix = suffixes[f.type]
 
-            if verbose:
-                print()
-                print(f.name)
-                print("new bids:")
-
             try:
+                print("Old BIDS:")
+                print(f.info['BIDS'])
                 new_bids = f.info['BIDS']
                 new_bids['Filename'] = bids_dict['name']+suffix
                 new_bids['Folder'] = bids_dict['folder']
@@ -99,14 +100,18 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
             except Exception as e:
                 print("Couldn't find BIDS data for file ", f.name)
                 print("Maybe BIDS curation hasn't been run...?")
-                print(e)
+
                 error = {'subject': subj_label,
                          'session': sess_label,
                          'job': 'query files',
                          'reason': e}
                 FAILS.append(error)
+                continue
 
-            if verbose: print(new_bids)
+            if verbose:
+                print("\nNew BIDS:")
+                print(new_bids)
+                print("--------")
 
             try:
                 acq.update_file_info(f.name, {'BIDS': new_bids})
@@ -125,6 +130,9 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
                 intended.append((key, val))
 
     # update file intentions for each intended
+    if verbose:
+        print("\nUpdating fieldmap intentions:".format(subj_label, sess_label))
+        print("=========================================================")
     # get all of the files
     all_files = []
 
@@ -148,12 +156,12 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
                 FAILS.append(error)
                 continue
 
-            if verbose: print("For acquisition: ", acq.label)
+            if verbose: print("\nFor acquisition: ", acq.label)
 
             # (have to update each file in the acquisition)
             for f in acquisition_files:
                 intent = [x["Folder"] for x in ast.literal_eval(f.info['BIDS']['IntendedFor'])]
-                if verbose: print("Intended For: ", intent)
+                if verbose: print(f.name, "intended For: ", intent)
 
                 # loop through all files and add any with matching intent to target files
                 target_files = []
@@ -167,7 +175,7 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
                             path = "/".join([path, g.info['BIDS']['Folder'], g.info['BIDS']['Filename']])
                             target_files.append(path)
 
-                if verbose: print(target_files)
+                if verbose: print("Files: ", target_files)
 
                 try:
                     acq.update_file_info(f.name, {'IntendedFor': target_files})
@@ -179,7 +187,7 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
                     continue
 
 
-    if verbose: print("Updates complete")
+    if verbose: print("\nUpdates complete\n")
     return(FAILS)
 
 def get_parser():
