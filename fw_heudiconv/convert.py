@@ -10,6 +10,7 @@ info = {
 }
 id = {'locator': 'unknown', 'session': 'None', 'subject': '20448'}
 """
+
 # def convert(info):
 #     """Using an id and an info object, will format it into a flywheel BIDS
 #     standard object
@@ -37,10 +38,10 @@ id = {'locator': 'unknown', 'session': 'None', 'subject': '20448'}
 #             'ignore': 'dup' in os.path.basename(full_path)
 #         }
 
-def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbose=True):
+def apply_conversion(client, heur, acquisition_ids, subj_label=None, sess_label=None, verbose=True):
     """Applies the BIDS naming convention found in the heuristic to the current
-    collection of files. Updates all BIDS fields and defines intentions for
-    fieldmap files.
+    collection of files in the acquisition ids. Updates all BIDS fields and
+    defines intentions for fieldmap files.
 
     Args:
         client (Client): The flywheel sdk client
@@ -55,7 +56,8 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
     suffixes = {'nifti': ".nii.gz", 'bval': ".bval", 'bvec': ".bvec"}
     ftypes = ['nifti', 'bval', 'bvec']
     FAILS = []
-    all_acquisitions = [client.get(val[0]) for _, val in to_rename.items() if val]
+
+    all_acquisitions = [client.get(acquisition_ids[0]) for x in acquisition_ids]
 
     # get subj and sess labels if not set
     if subj_label is None:
@@ -66,45 +68,33 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
     if verbose:
         print("\nUpdating BIDS info for subject {} session {}:".format(subj_label, sess_label))
         print("=========================================================")
-    for key, val in to_rename.items():
-        if not val:
-            continue
-
-        # make a bids dictionary
-        bids_keys = ['sub', 'ses', 'folder', 'name']
-        bids_vals = key[0].format(subject=subj_label, session="ses-"+sess_label).split("/")
-        bids_dict = dict(zip(bids_keys, bids_vals))
-
-        # get the acquisition object
-        acq_id = val[0]
-        try:
+    try:
+    # loop acquisition ids in case > 1
+        for acq_id in acquisition_ids:
             acq = client.get(acq_id)
             files = [f for f in acq.files if f.type in ftypes]
-        except Exception as e:
-            print("Could not query flywheel to apply BIDS changes!")
-            print(e)
-            error = {'subject': subj_label,
-                     'session': sess_label,
-                     'job': 'query files',
-                     'reason': e}
-            FAILS.append(error)
-            continue
 
-        for f in files:
+            # make a bids dictionary
+            bids_keys = ['sub', 'ses', 'folder', 'name']
+            bids_vals = heur[0].format(subject=subj_label, session="ses-"+sess_label).split("/")
+            bids_dict = dict(zip(bids_keys, bids_vals))
 
-            if verbose:
-                print("\n--------")
-                print(f.name, "\n")
+            # update the files in this heuristic
+            for f in files:
 
-            # special check for magnitude files
-            if "e1.nii.gz" in f.name:
-                suffix = "1" + suffixes[f.type]
-            elif "e2.nii.gz" in f.name:
-                suffix = "2" + suffixes[f.type]
-            else:
-                suffix = suffixes[f.type]
+                if verbose:
+                    print("\n--------")
+                    print(f.name, "\n")
 
-            try:
+                    # special check for magnitude files
+                    if "e1.nii.gz" in f.name:
+                        suffix = "1" + suffixes[f.type]
+                    elif "e2.nii.gz" in f.name:
+                        suffix = "2" + suffixes[f.type]
+                    else:
+                        suffix = suffixes[f.type]
+
+                # here's the old bids
                 if verbose: print("Old BIDS:")
                 if 'BIDS' in f.info:
                     if verbose: print(f.info['BIDS'])
@@ -114,6 +104,7 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
                     " bids-curation hasn't been run]")
                     new_bids = add_empty_bids_fields(bids_dict['folder'], bids_dict['name'])
 
+                # here we set new bids
                 new_bids['Filename'] = bids_dict['name']+suffix
                 new_bids['Folder'] = bids_dict['folder']
                 new_bids['Path'] = "/".join([bids_dict['sub'],
@@ -121,99 +112,68 @@ def apply_conversion(client, to_rename, subj_label=None, sess_label=None, verbos
                                             bids_dict['folder']])
                 new_bids['error_message'] = ""
                 new_bids['valid'] = True
-            except Exception as e:
-                print("Couldn't set BIDS data for file ", f.name)
-                print("Maybe BIDS curation hasn't been run...?")
 
-                error = {'subject': subj_label,
-                         'session': sess_label,
-                         'job': 'query files',
-                         'reason': e}
-                FAILS.append(error)
-                continue
+                if verbose:
+                    print("\nNew BIDS:")
+                    print(new_bids)
+                    print("--------")
 
+                # here we try to update the file
+                result = acq.update_file_info(f.name, {'BIDS': new_bids})
+
+                # track intention updates
+                if "IntendedFor" in new_bids and bool(new_bids['IntendedFor']):
+                    intended.append(acq)
+
+        # Update intentions
+        if intended:
             if verbose:
-                print("\nNew BIDS:")
-                print(new_bids)
-                print("--------")
+                print("\nUpdating fieldmap intentions: {} {}".format(subj_label, sess_label))
+                print("=========================================================")
 
-            try:
-                acq.update_file_info(f.name, {'BIDS': new_bids})
-            except Exception as e:
-                print("Unable to update file ", f.name)
-                print(e)
-                error = {'subject': subj_label,
-                         'session': sess_label,
-                         'job': 'update file',
-                         'reason': e}
-                FAILS.append(error)
-                continue
+            # get all of the files in this session
+            all_files = []
 
-            # track intention updates
-            if "IntendedFor" in new_bids and bool(new_bids['IntendedFor']):
-                intended.append((key, val))
+            for acq in all_acquisitions:
+                for f in acq.files:
+                    if f.type in ['nifti', 'bval', 'bvec']:
+                        all_files.append(f)
 
-    # update file intentions for each intended
-    if verbose:
-        print("\nUpdating fieldmap intentions: {} {}".format(subj_label, sess_label))
-        print("=========================================================")
+            # loop over all of the intended acquisitions
+            for acq in intended:
 
-    # get all of the files in this session
-    all_files = []
-
-    for acq in all_acquisitions:
-        for f in acq.files:
-            if f.type in ['nifti', 'bval', 'bvec']:
-                all_files.append(f)
-
-    # loop over the intented files
-    if intended:
-        for key, val in intended:
-
-            acq_id = val[0]
-            try:
-                acq = client.get(acq_id)
+                acq = acq.reload()
                 acquisition_files = [f for f in acq.files if f.type in ftypes]
-            except Exception as e:
-                print("Could not query flywheel to apply intentions!")
-                print(e)
-                error = {'subject': subj_label, 'session': sess_label, 'job': 'query files', 'reason': e}
-                FAILS.append(error)
-                continue
 
-            if verbose: print("\nFor acquisition: ", acq.label)
+                #for all files in the intended acquisitions, list the files they are intended for
+                for f in acquisition_files:
+                    intent = [x["Folder"] for x in ast.literal_eval(f.info['BIDS']['IntendedFor'])]
+                    if verbose: print(f.name, "intended For: ", intent)
 
-            # (have to update each file in the acquisition)
-            for f in acquisition_files:
-                intent = [x["Folder"] for x in ast.literal_eval(f.info['BIDS']['IntendedFor'])]
-                if verbose: print(f.name, "intended For: ", intent)
+                    # loop over all of the files; if they match, add to the target list
+                    target_files = []
+                    for g in all_files:
+                        if "BIDS" in g.info.keys() and g.info['BIDS'] != "NA":
+                            if g.info['BIDS']['Folder'] in intent and ".nii.gz" in g.info['BIDS']['Filename']:
 
-                # loop through all files and add any with matching intent to target files
-                target_files = []
+                                # build appropriate bids name for intention path
+                                path = heur[0].format(subject=subj_label, session="ses-"+sess_label).split("/")[1]
+                                path = "/".join([path, g.info['BIDS']['Folder'], g.info['BIDS']['Filename']])
+                                target_files.append(path)
 
-                for g in all_files:
-                    if "BIDS" in g.info.keys() and g.info['BIDS'] != "NA":
-                        if g.info['BIDS']['Folder'] in intent and ".nii.gz" in g.info['BIDS']['Filename']:
-
-                            # build appropriate bids name for intention path
-                            path = key[0].format(subject=subj_label, session="ses-"+sess_label).split("/")[1]
-                            path = "/".join([path, g.info['BIDS']['Folder'], g.info['BIDS']['Filename']])
-                            target_files.append(path)
-
-                if verbose: print("Files: ", target_files)
-
-                try:
+                    if verbose: print("Files: ", target_files)
                     acq.update_file_info(f.name, {'IntendedFor': target_files})
-                except Exception as e:
-                    print("Unable to update intentions", f.name)
-                    print(e)
-                    error = {'subject': subj_label, 'session': sess_label, 'job': 'update intentions', 'reason': e}
-                    FAILS.append(error)
-                    continue
 
-
-    if verbose: print("\nUpdates complete\n")
-    return(FAILS)
+            if verbose: print("\nUpdates complete\n")
+        return None
+    except Exception as e:
+        print("Unable to update sequence ", acq_id)
+        print(e)
+        error = {'subject': subj_label,
+                 'session': sess_label,
+                 'job': 'update file',
+                 'reason': e}
+        return error
 
 # To do:
 def add_empty_bids_fields(folder, fname=None):
