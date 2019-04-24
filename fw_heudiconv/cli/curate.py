@@ -2,8 +2,8 @@ import argparse
 import warnings
 import flywheel
 import pandas as pd
-from .convert import apply_conversion
-from .query import query
+from ..convert import apply_heuristic, update_intentions
+from ..query import get_sessions, get_seq_info
 from heudiconv import utils
 from tabulate import tabulate
 
@@ -23,22 +23,18 @@ def convert_to_bids(client, project_label, heuristic_path, subject_code=None, se
     """
 
     if verbose: print("Querying Flywheel server...")
-    seq_infos = query(client, project_label, subject=subject_code, session=session_label)
+    sessions = get_sessions(client, project_label, subject=subject_code, session=session_label)
+    seq_infos = get_seq_info(client, project_label, sessions)
     if verbose: print("Loading heuristic file...")
     heuristic = utils.load_heuristic(heuristic_path)
     BIDS_objects = {}
     if verbose: print("Applying heuristic to query results...")
     to_rename = heuristic.infotodict(seq_infos)
     if verbose: print("Applying changes to files...")
-    errors = apply_conversion(client, to_rename, subject_code, session_label, verbose=verbose)
-
-    if len(errors) > 0:
-        print("The following acquisitions had errors on updating:")
-        print(tabulate(pd.DataFrame(errors), headers='keys', tablefmt='psql'))
-        return
-    else:
-        print("No other errors recorded.")
-        return
+    for key, val in to_rename.items():
+        apply_heuristic(client, key, val)
+    for s in sessions:
+        update_intentions(s)
 
 
 def get_parser():

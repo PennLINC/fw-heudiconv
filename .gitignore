@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+sessions.txt
+grmpy_heuristic.py

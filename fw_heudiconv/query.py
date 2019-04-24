@@ -1,7 +1,6 @@
 import flywheel
 import sys
 import logging
-# from tqdm import tqdm
 import re
 import warnings
 import collections
@@ -74,7 +73,7 @@ def acquisition_to_heudiconv(acq, context):
     return to_convert
 
 
-def get_seq_info(client, session, context):
+def session_to_seq_info(client, session, context):
     """Returns a SeqInfo OrderedDict for a session
 
     Args:
@@ -100,7 +99,7 @@ def get_seq_info(client, session, context):
     return seq_info
 
 
-def query(client, project, subject=None, session=None, grouping=None):
+def get_sessions(client, project, subject=None, session=None):
     """Query the flywheel client for a project name
     This function uses the flywheel API to find the first match of a project
     name. The name must be exact so make sure to type it as is on the
@@ -139,6 +138,13 @@ def query(client, project, subject=None, session=None, grouping=None):
     else:
         sessions = project_object.sessions()
 
+    return sessions
+
+def get_seq_info(client, project, sessions, grouping=None):
+
+    project_object = client.projects.find_first('label={0}'.format(project))
+    context = {'project': project_object}
+
     seq_infos = collections.OrderedDict()
     for session in sessions:
         session = client.get(session.id)
@@ -146,10 +152,10 @@ def query(client, project, subject=None, session=None, grouping=None):
         context['session'] = session
         if grouping is None:
             # All seq infos should be top level if there is no grouping
-            for key, val in get_seq_info(client, session, context).items():
+            for key, val in session_to_seq_info(client, session, context).items():
                 seq_infos[key] = val
         else:
             # For now only supports grouping with session
-            seq_infos[session.id] = get_seq_info(client, session, context)
+            seq_infos[session.id] = session_to_seq_info(client, session, context)
 
     return seq_infos
