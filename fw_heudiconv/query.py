@@ -121,7 +121,7 @@ def get_sessions(client, project, subject=None, session=None):
         A list of SeqInfo objects
     """
     project_object = client.projects.find_first('label={0}'.format(project))
-    context = {'project': project_object}
+    context = {'project': project_object}   # what is this?
 
     if project_object is None:
         print("Available projects are:\n")
