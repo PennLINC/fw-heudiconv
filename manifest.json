@@ -2,7 +2,7 @@
 	"name": "fw-heudiconv",
 	"label": "Flywheel HeuDiConv",
 	"description": "Created by the gear builder. Edit the manifest file to give this gear a description!",
-	"version": "0.1.0_0.1.0",
+	"version": "0.1.2_0.1.0",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"
@@ -40,8 +40,8 @@
 	"url": "",
 	"custom": {
 		"gear-builder": {
-			"category": "converter",
-			"image": "pennbbl/fw-heudiconv:0.1.0_0.1.0"
+			"category": "analysis",
+			"image": "pennbbl/fw-heudiconv:0.1.2_0.1.0"
 		},
 		"flywheel":{"suite": "PennBBL"}
 	}
