@@ -23,7 +23,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'fw-heudiconv-curate=fw_heudiconv.cli.curate:main',
-            'fw-heudiconv-download=fw_heudiconv.cli.curate:main'
+            'fw-heudiconv-download=fw_heudiconv.cli.download:main'
         ],
     }
 )
