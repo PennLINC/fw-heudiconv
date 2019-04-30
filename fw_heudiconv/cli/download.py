@@ -2,6 +2,8 @@ import flywheel
 import argparse
 import os
 import logging
+import warnings
+import json
 
 
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +26,10 @@ def key_exists(obj, chain):
     _key = chain[0]
     if _key in obj:
         if obj[_key]:
-            return key_exists(obj[_key], chain[1:]) if len(chain) > 1 else obj[_key]
+            if len(chain) > 1:
+                return key_exists(obj[_key], chain[1:])
+            else:
+                obj[_key]
         else:
             return None
 
@@ -37,6 +42,15 @@ def get_metadata(container, nested_key_list):
         return None
 
 
+def download_sidecar(d, fpath, remove_bids=True):
+
+    if remove_bids and 'BIDS' in d:
+        del d['BIDS']
+
+    with open(fpath, 'w') as sidecar:
+        output = json.dump(d, fp=sidecar, sort_keys=True, indent=4)
+
+
 def gather_bids(client, project_label, subject_labels=None, session_labels=None):
     '''
     {
@@ -47,16 +61,17 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     '''
 
     to_download = {
+        'dataset_description': [],
         'project': [],
         'session': [],
         'acquisition': []
     }
 
-    # project level
+    # dataset description
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
 
     # get dataset description file
-    to_download['project'].append({
+    to_download['dataset_description'].append({
         'name': 'dataset_description.json',
         'type': 'dataset_description',
         'data': get_metadata(project_obj, ['info', 'BIDS'])
@@ -75,11 +90,10 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     sessions = client.get_project_sessions(project_obj.id)
 
     # filters
-    #if session_labels:
-    #    sessions = [s for s in sessions if s.label in session_labels]
-    #if subject_labels:
-    #    for ses in sessions:
-    #        subject = client.get(ses.parents['subject'])
+    if subject_labels:
+        sessions = [s for s in sessions if s.subject['label'] in subject_labels]
+    if session_labels:
+        sessions = [s for s in sessions if s.label in session_labels]
 
     for ses in sessions:
         for sf in ses.files:
@@ -91,7 +105,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
             }
             to_download['session'].append(d)
 
-    # session level
+    # acquistion level
     acquisitions = [a for s in sessions for a in client.get_session_acquisitions(s.id)]
     acquisitions_meta = [a.info for a in acquisitions]
     acquisitions2 = [client.get_acquisition(acq['_id']) for acq in acquisitions]
@@ -100,24 +114,33 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
         d = {
             'name': af.name,
             'type': af.type,
-            'data': get_metadata(af, ['origin', 'id']),
+            'data': af.parent.id,
             'BIDS': get_metadata(af, ['info', 'BIDS']),
             'sidecar': get_metadata(af, ['info'])
         }
-        if bool(d['BIDS']):
+        if bool(d['BIDS']) and d['BIDS'] != "NA":
             to_download['acquisition'].append(d)
 
     return to_download
 
-def download_bids(to_download, root_path):
+
+def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap']):
+
+    # handle dataset description
+    if to_download['dataset_description']:
+        description = to_download['dataset_description'][0]
+
+        path = "/".join([root_path, description['name']])
+        print(path)
+        download_sidecar(description['data'], path, remove_bids=False)
 
     # deal with project level files
     # NOT YET IMPLEMENTED
     for fi in to_download['project']:
-
-        download_path = get_metadata(fi, ['BIDS', 'Path'])
-        if download_path:
-            print('/'.join([root_path, download_path, fi['name']]))
+        pass
+        #download_path = get_metadata(fi, ['BIDS', 'Path'])
+        #if download_path:
+        #    print('/'.join([root_path, download_path, fi['name']]))
 
     # deal with session level files
     # NOT YET IMPLEMENTED
@@ -130,10 +153,30 @@ def download_bids(to_download, root_path):
     # deal with acquisition level files
     for fi in to_download['acquisition']:
 
-        download_path = get_metadata(fi, ['BIDS', 'Path'])
-        if download_path:
-            print('/'.join([root_path, download_path, fi['name']]))
-            print(bool(fi['sidecar']))
+        project_path = get_metadata(fi, ['BIDS', 'Path'])
+        folder = get_metadata(fi, ['BIDS', 'Folder'])
+        ignore = get_metadata(fi, ['BIDS', 'ignore'])
+
+        if project_path and folder in folders_to_download and not ignore and 'sidecar' in fi:
+            fname = get_metadata(fi, ['BIDS', 'Filename'])
+            extensions = ['nii.gz', 'bval', 'bvec']
+            sidecar_name = fname
+            for x in extensions:
+                sidecar_name = sidecar_name.replace(x, 'json')
+
+            download_path = '/'.join([root_path, project_path])
+            file_path = '/'.join([download_path, fname])
+            sidecar_path = '/'.join([download_path, sidecar_name])
+            print(fi['name'])
+            print(file_path)
+            print(sidecar_path)
+            acq = client.get(fi['data'])
+            print(acq.label)
+
+            if not os.path.exists(download_path):
+                os.makedirs(download_path)
+            acq.download_file(fi['name'], file_path)
+            download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
 
 def get_parser():
@@ -148,25 +191,20 @@ def get_parser():
     )
     parser.add_argument(
         "--path",
-        help="The project in flywheel",
+        help="The target directory to download",
         nargs="+",
         required=True,
         default="."
     )
     parser.add_argument(
         "--subject",
-        help="The name of the subject",
+        help="The subject to curate",
         default=None
     )
     parser.add_argument(
         "--session",
         help="The session to curate",
         default=None
-    )
-    parser.add_argument(
-        "--verbose",
-        help="Print ongoing messages of progress",
-        default=True
     )
 
     return parser
@@ -182,11 +220,12 @@ def main():
     args = parser.parse_args()
     project_label = ' '.join(args.project)
     assert os.path.isdir(args.path), "Path does not exist!"
-    gather_bids(client=fw,
-                    project_label=project_label,
-                    session_label=args.session,
-                    subject_code=args.subject,
-                    verbose=args.verbose)
+    downloads = gather_bids(client=fw,
+                            project_label=project_label,
+                            session_labels=args.session,
+                            subject_labels=args.subject)
+
+    download_bids(client=fw, downloads, args.path)
 
 if __name__ == '__main__':
     main()
