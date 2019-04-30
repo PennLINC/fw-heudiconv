@@ -1,7 +1,6 @@
 import argparse
 import warnings
 import flywheel
-import pandas as pd
 from ..convert import apply_heuristic, update_intentions
 from ..query import get_sessions, get_seq_info
 from heudiconv import utils

@@ -2,7 +2,7 @@
 	"name": "fw-heudiconv",
 	"label": "Flywheel HeuDiConv",
 	"description": "Created by the gear builder. Edit the manifest file to give this gear a description!",
-	"version": "0.1.2_0.1.0",
+	"version": "0.1.4_0.1.0",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"
@@ -29,6 +29,16 @@
 			"default": true,
 			"description": "Export/Curate all files instead of just func/fmap/anat/dwi",
 			"type": "boolean"
+		},
+		"subject_id": {
+			"default": "",
+			"description": "Only use these subjects",
+			"type": "string"
+		},
+		"session_id": {
+			"default": "",
+			"description": "Only use these sessions",
+			"type": "string"
 		}
 	},
 	"command": "./fw_heudiconv_run.py",
@@ -41,7 +51,7 @@
 	"custom": {
 		"gear-builder": {
 			"category": "analysis",
-			"image": "pennbbl/fw-heudiconv:0.1.2_0.1.0"
+			"image": "pennbbl/fw-heudiconv:0.1.4_0.1.0"
 		},
 		"flywheel":{"suite": "PennBBL"}
 	}

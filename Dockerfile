@@ -26,6 +26,7 @@ RUN cd /src \
     && pip install . \
     && pip install --no-cache --no-deps heudiconv \
     && pip install --no-cache flywheel-sdk \
+    && pip install --no-cache nipype \
     && rm -rf /src
 
 COPY fw_heudiconv_run.py /flywheel/v0/fw_heudiconv_run.py

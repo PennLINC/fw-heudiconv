@@ -7,7 +7,7 @@ import json
 
 
 logging.basicConfig(level=logging.INFO)
-
+logger = logging.getLogger('bids-exporter')
 
 def get_from_dict(dataDict, maplist):
 
@@ -59,6 +59,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     'type': type of file,
     'data': container}
     '''
+    logger.info("Gathering bids data:")
 
     to_download = {
         'dataset_description': [],
@@ -77,6 +78,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
         'data': get_metadata(project_obj, ['info', 'BIDS'])
     })
     # download any project level files
+    logger.info("Processing project files...")
     project_files = project_obj.files
     for pf in project_files:
         d = {
@@ -87,6 +89,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
         to_download['project'].append(d)
 
     # session level
+    logger.info("Processing session files...")
     sessions = client.get_project_sessions(project_obj.id)
 
     # filters
@@ -106,6 +109,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
             to_download['session'].append(d)
 
     # acquistion level
+    logger.info("Processing acquisition files...")
     acquisitions = [a for s in sessions for a in client.get_session_acquisitions(s.id)]
     acquisitions_meta = [a.info for a in acquisitions]
     acquisitions2 = [client.get_acquisition(acq['_id']) for acq in acquisitions]
@@ -126,6 +130,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
 
 def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap']):
 
+    logger
     # handle dataset description
     if to_download['dataset_description']:
         description = to_download['dataset_description'][0]
@@ -192,22 +197,24 @@ def get_parser():
     parser.add_argument(
         "--path",
         help="The target directory to download",
-        nargs="+",
         required=True,
         default="."
     )
     parser.add_argument(
         "--subject",
         help="The subject to curate",
-        default=None
+        default=None,
+        type=str
     )
     parser.add_argument(
         "--session",
         help="The session to curate",
-        default=None
+        default=None,
+        type=str
     )
 
     return parser
+
 
 def main():
 
@@ -219,13 +226,13 @@ def main():
 
     args = parser.parse_args()
     project_label = ' '.join(args.project)
-    assert os.path.isdir(args.path), "Path does not exist!"
+    assert os.path.exists(args.path), "Path does not exist!"
     downloads = gather_bids(client=fw,
                             project_label=project_label,
                             session_labels=args.session,
                             subject_labels=args.subject)
 
-    download_bids(client=fw, downloads, args.path)
+    download_bids(client=fw, to_download=downloads, root_path=args.path)
 
 if __name__ == '__main__':
     main()
