@@ -8,6 +8,7 @@ config      = invocation['config']
 inputs      = invocation['inputs']
 destination = invocation['destination']
 
+# QUERY ANALYSIS ID TO PASS AS INPUTS TO CURATE.PY or DOWNLOAD.PY
 
 # Display everything provided to the job
 def display(section):
