@@ -12,12 +12,10 @@ COPY manifest.json ${FLYWHEEL}/manifest.json
 ENTRYPOINT ["/flywheel/v0/fw_heudiconv_run.py"]
 
 # Copy over python scripts that generate the BIDS hierarchy
+RUN pip install --no-cache heudiconv flywheel-sdk
 COPY . /src
 RUN cd /src \
     && pip install . \
-    && pip install --no-cache --no-deps heudiconv \
-    && pip install --no-cache flywheel-sdk \
-    && pip install --no-cache nipype \
     && rm -rf /src
 
 COPY fw_heudiconv_run.py /flywheel/v0/fw_heudiconv_run.py
