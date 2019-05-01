@@ -4,7 +4,6 @@ import flywheel
 from ..convert import apply_heuristic, update_intentions
 from ..query import get_sessions, get_seq_info
 from heudiconv import utils
-from tabulate import tabulate
 
 
 def convert_to_bids(client, project_label, heuristic_path, subject_code=None, session_label=None, verbose=True):

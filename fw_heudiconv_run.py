@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import json
 import flywheel
+import os
+from fw_heudiconv.cli import curate, download
 
 print('This is an example python script.')
 invocation  = json.loads(open('config.json').read())

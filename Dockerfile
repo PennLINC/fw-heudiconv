@@ -1,16 +1,7 @@
 #flywheel/fmriprep
 
-FROM alpine:latest
+FROM python:3
 MAINTAINER Matt Cieslak <matthew.cieslak@pennmedicine.upenn.edu>
-
-RUN apk --no-cache --update-cache add py3-numpy bash zip
-RUN apk add --no-cache python3 && \
-    python3 -m ensurepip && \
-    rm -r /usr/lib/python*/ensurepip && \
-    pip3 install --upgrade pip setuptools && \
-    if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
-    if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi && \
-    rm -r /root/.cache
 
 # Make directory for flywheel spec (v0)
 ENV FLYWHEEL /flywheel/v0
