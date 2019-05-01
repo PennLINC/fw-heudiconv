@@ -108,3 +108,4 @@ venv.bak/
 sessions.txt
 grmpy_heuristic.py
 fw-heudiconv-*
+fw_heudiconv_run.py

@@ -10,6 +10,7 @@ def build_intention_path(f):
     ses = fname.split("_")[1]
     return("/".join([ses, folder, fname]))
 
+
 def update_intentions(client, session):
     """Updates the IntendedFor field of all files in a session with intentions
 
@@ -31,6 +32,7 @@ def update_intentions(client, session):
             target_files = [build_intention_path(g) for g in target_files]
 
             f.parent.update_file_info(f.name, {"IntendedFor": target_files})
+
 
 def apply_heuristic(client, heur, acquisition_ids):
     """ Apply heuristic to rename files
