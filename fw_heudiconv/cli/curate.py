@@ -40,9 +40,11 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None, 
     to_rename = heuristic.infotodict(seq_infos)
     logger.info("Applying changes to files...")
     for key, val in to_rename.items():
-        apply_heuristic(client, key, val)
+        #apply_heuristic(client, key, val)
+        pass
     for s in sessions:
-        update_intentions(s)
+        #update_intentions(s)
+        pass
 
 
 def get_parser():
