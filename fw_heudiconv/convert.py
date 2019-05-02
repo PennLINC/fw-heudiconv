@@ -69,6 +69,8 @@ def apply_heuristic(client, heur, acquisition_ids):
             else:
                 suffix = suffixes[f.type]
 
+            if 'BIDS' not in f.info:
+                f.info['BIDS'] = ""
             new_bids = f.info['BIDS']
             if new_bids == "NA" or new_bids == "":
                 new_bids = add_empty_bids_fields(bids_dict['folder'], bids_dict['name'])
@@ -79,7 +81,7 @@ def apply_heuristic(client, heur, acquisition_ids):
                                         bids_dict['folder']])
             new_bids['error_message'] = ""
             new_bids['valid'] = True
-            acq.update_file_info(f.name, {'BIDS': new_bids})
+            acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
 
 
 def add_empty_bids_fields(folder, fname=None):
