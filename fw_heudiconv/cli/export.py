@@ -88,10 +88,10 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     sessions = client.get_project_sessions(project_obj.id)
 
     # filters
-    # if subject_labels:
-    #     sessions = [s for s in sessions if s.subject['label'] in subject_labels]
-    # if session_labels:
-    #     sessions = [s for s in sessions if s.label in session_labels]
+    if subject_labels:
+        sessions = [s for s in sessions if s.subject['label'] in subject_labels]
+    if session_labels:
+        sessions = [s for s in sessions if s.label in session_labels]
 
     for ses in sessions:
         for sf in ses.files:
