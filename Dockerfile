@@ -18,7 +18,8 @@ RUN cd /src \
     && pip install --no-cache --no-deps heudiconv \
     && pip install --no-cache flywheel-sdk \
     && pip install --no-cache nipype \
-    && rm -rf /src
+    && rm -rf /src \
+    && apt-get install -y --no-install-recommends zip
 
 COPY fw_heudiconv_run.py /flywheel/v0/fw_heudiconv_run.py
 RUN chmod +x ${FLYWHEEL}/*
