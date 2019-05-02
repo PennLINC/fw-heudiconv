@@ -26,12 +26,14 @@ def update_intentions(client, session):
     files = [f for acq in session.acquisitions() for f in acq.files if f.type in ftypes]
 
     for f in files:
-        if f.info['BIDS']["IntendedFor"]:
-            folder = [x["Folder"] for x in ast.literal_eval(f.info['BIDS']['IntendedFor'])]
-            target_files = [g for g in files if g.info['BIDS']['Folder'] in folder]
-            target_files = [build_intention_path(g) for g in target_files]
+        if 'BIDS' in f.info:
+            if 'IntendedFor' in f.info['BIDS']:
+                if f.info['BIDS']["IntendedFor"]:
+                    folder = [x["Folder"] for x in ast.literal_eval(f.info['BIDS']['IntendedFor'])]
+                    target_files = [g for g in files if g.info['BIDS']['Folder'] in folder]
+                    target_files = [build_intention_path(g) for g in target_files]
 
-            f.parent.update_file_info(f.name, {"IntendedFor": target_files})
+                    f.parent.update_file_info(f.name, {"IntendedFor": target_files})
 
 
 def apply_heuristic(client, heur, acquisition_ids):

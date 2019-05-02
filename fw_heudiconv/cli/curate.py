@@ -42,7 +42,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None, 
     for key, val in to_rename.items():
         apply_heuristic(client, key, val)
     for s in sessions:
-        update_intentions(s)
+        update_intentions(client, s)
 
 
 def get_parser():

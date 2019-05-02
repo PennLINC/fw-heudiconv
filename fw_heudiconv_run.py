@@ -83,7 +83,8 @@ elif config['action'] == "Export":
 
     # tidy up
     output_dir = "/flywheel/v0/output"
-    os.system("zip -r {}_BIDSexport.zip /flywheel/v0/output/*".format(destination['id']))
+    os.system("zip -r {}_BIDSexport.zip output/*".format(destination['id']))
+    os.system("mv *.zip output")
     to_remove = os.listdir(output_dir)
     to_remove = ["{}/{}".format(output_dir, x) for x in to_remove if ".zip" not in x]
     for x in to_remove:
