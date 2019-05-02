@@ -30,16 +30,6 @@
 			"description": "Export/Curate all files instead of just func/fmap/anat/dwi",
 			"type": "boolean"
 		},
-		"subject_ids": {
-			"default": "",
-			"description": "Only use these subjects, separated by commas",
-			"type": "string"
-		},
-		"session_ids": {
-			"default": "",
-			"description": "Only use these sessions, separated by commas",
-			"type": "string"
-		}
 	},
 	"command": "./fw_heudiconv_run.py",
 	"author": "Tinashe Michael Tapera",

@@ -3,38 +3,21 @@ import json
 import flywheel
 import os
 import shutil
+import logging
 from fw_heudiconv.cli import curate, export
 
 
-def make_archive(source, destination):
-    base = os.path.basename(destination)
-    name = base.split('.')[0]
-    format = base.split('.')[1]
-    archive_from = os.path.dirname(source)
-    archive_to = os.path.basename(source.strip(os.sep))
-    shutil.make_archive(name, format, archive_from, archive_to)
-    shutil.move('%s.%s' % (name, format), destination)
+# logging stuff
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('fw-heudiconv-gear')
+logger.info("=======: fw-heudiconv starting up :=======")
 
-# print('This is an example python script.')
-invocation  = json.loads(open('config.json').read())
-config      = invocation['config']
-inputs      = invocation['inputs']
+# start up inputs
+invocation = json.loads(open('config.json').read())
+config = invocation['config']
+inputs = invocation['inputs']
 destination = invocation['destination']
 
-# QUERY ANALYSIS ID TO PASS AS INPUTS TO CURATE.PY or DOWNLOAD.PY
-
-# Display everything provided to the job
-# def display(section):
-#     print(json.dumps(section, indent=4, sort_keys=True))
-#
-# print('\nConfig:')
-# display(config)
-# print('\nDestination:')
-# display(destination)
-# print('\nInputs:')
-# display(inputs)
-
-# Make some simple calls to the API
 fw = flywheel.Flywheel(inputs['api-key']['key'])
 user = fw.get_current_user()
 
@@ -44,40 +27,37 @@ analysis_container = fw.get(destination['id'])
 project_container = fw.get(analysis_container.parents['project'])
 project_label = project_container.label
 
-# whole project, single session, or many sessions?
+# whole project, single session?
 do_whole_project = config['do_whole_project']
 
 if not do_whole_project:
-    if config['session_ids']:
-        sessions = [x.strip() for x in config['session_ids'].split(",")]
-    else:
-        # find session object origin
-        session_container = fw.get(analysis_container.parent['id'])
-        sessions = [session_container.label]
-    if config['subject_ids']:
-        subjects = [x.strip() for x in config['subject_ids'].split(",")]
-    else:
-        # find subject object origin
-        session_container = fw.get(analysis_container.parent['id'])
-        subject_container = fw.get(session_container.parents['subject'])
-        subjects = [subject_container.label]
+
+    # find session object origin
+    session_container = fw.get(analysis_container.parent['id'])
+    sessions = [session_container.label]
+    # find subject object origin
+    subject_container = fw.get(session_container.parents['subject'])
+    subjects = [subject_container.label]
 
 else:
     sessions = None
     subjects = None
 
-# to do: logger messages
-# print(project_label)
-# print(subjects)
-# print(sessions)
-# print(heuristic)
+# logging stuff
+logger.info("Running fw-heudiconv with the following settings:")
+logger.info("Project: {}".format(project_label))
+logger.info("Subject(s): {}".format(subjects))
+logger.info("Session(s): {}".format(sessions))
+logger.info("Heuristic found at: {}".format(heuristic))
+logger.info("Action: {}".format(config['action']))
 
 # action
 if config['action'] == "Curate":
-    #print('curate bids')
-    curate.convert_to_bids(fw, project_label, heuristic, subjects, sessions)
+
+    curate.convert_to_bids(fw, project_label, heuristic, subjects, sessions, dry_run=False)
+
 elif config['action'] == "Export":
-    #print("export bids")
+
     downloads = export.gather_bids(fw, project_label, subjects, sessions)
     export.download_bids(fw, downloads, "output")
 
@@ -94,7 +74,9 @@ elif config['action'] == "Export":
             shutil.rmtree(x)
 
 elif config['action'] == "Preview":
-    print("preview mode not yet implemented!")
-    pass
+
+    curate.convert_to_bids(fw, project_label, heuristic, subjects, sessions, dry_run=True)
+
 else:
+
     raise Exception('Action not specified correctly!')
