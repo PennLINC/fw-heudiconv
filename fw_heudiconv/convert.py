@@ -1,5 +1,6 @@
 import os
 import ast
+import json
 
 
 def build_intention_path(f):
@@ -29,14 +30,19 @@ def update_intentions(client, session):
         if 'BIDS' in f.info:
             if 'IntendedFor' in f.info['BIDS']:
                 if f.info['BIDS']["IntendedFor"]:
-                    folder = [x["Folder"] for x in ast.literal_eval(f.info['BIDS']['IntendedFor'])]
+                    try:
+                        folder = [x["Folder"] for x in
+                                  ast.literal_eval(f.info['BIDS']['IntendedFor'])]
+                    except Exception as e:
+                        logger.warning(e)
+                        continue
                     target_files = [g for g in files if g.info['BIDS']['Folder'] in folder]
                     target_files = [build_intention_path(g) for g in target_files]
 
                     f.parent.update_file_info(f.name, {"IntendedFor": target_files})
 
 
-def apply_heuristic(client, heur, acquisition_ids):
+def apply_heuristic(client, heur, acquisition_ids, dry_run=False):
     """ Apply heuristic to rename files
 
     This function applies the specified heuristic to the files given in the
@@ -60,7 +66,8 @@ def apply_heuristic(client, heur, acquisition_ids):
 
         files = [f for f in acquisition_object.files if f.type in ftypes]
         bids_keys = ['sub', 'ses', 'folder', 'name']
-        bids_vals = heur[0].format(subject=subj_label, session="ses-"+sess_label).split("/")
+        ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
+        bids_vals = heur[0].format(subject=subj_label, session=ses_fmt).split("/")
         bids_dict = dict(zip(bids_keys, bids_vals))
 
         for f in files:
@@ -79,11 +86,14 @@ def apply_heuristic(client, heur, acquisition_ids):
             new_bids['Filename'] = bids_dict['name']+suffix
             new_bids['Folder'] = bids_dict['folder']
             new_bids['Path'] = "/".join([bids_dict['sub'],
-                                        bids_dict['ses'],
-                                        bids_dict['folder']])
+                                         bids_dict['ses'],
+                                         bids_dict['folder']])
             new_bids['error_message'] = ""
             new_bids['valid'] = True
-            acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
+            if dry_run:
+                print(f.name, "->", json.dumps(new_bids, indent=4))
+            else:
+                acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
 
 
 def add_empty_bids_fields(folder, fname=None):

@@ -10,7 +10,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fwHeuDiConv-curator')
 
 
-def convert_to_bids(client, project_label, heuristic_path, subject_labels=None, session_labels=None, verbose=True):
+def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
+                    session_labels=None, verbose=True, dry_run=False):
     """Converts a project to bids by reading the file entries from flywheel
     and using the heuristics to write back to the BIDS namespace of the flywheel
     containers
@@ -22,6 +23,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None, 
             known heuristic
         subject_code (str): The subject code
         session_label (str): The session label
+        dry_run (bool): Print the changes, don't apply them on flywheel
     """
 
     logger.info("Querying Flywheel server...")
@@ -40,9 +42,9 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None, 
     to_rename = heuristic.infotodict(seq_infos)
     logger.info("Applying changes to files...")
     for key, val in to_rename.items():
-        apply_heuristic(client, key, val)
-    for s in sessions:
-        update_intentions(client, s)
+        apply_heuristic(client, key, val, dry_run)
+    #for s in sessions:
+    #    update_intentions(client, s)
 
 
 def get_parser():
@@ -75,7 +77,14 @@ def get_parser():
     parser.add_argument(
         "--verbose",
         help="Print ongoing messages of progress",
-        default=True
+        action='store_true',
+        default=False
+    )
+    parser.add_argument(
+        "--dry_run",
+        help="Don't apply changes",
+        action='store_true',
+        default=False
     )
 
     return parser
@@ -95,7 +104,8 @@ def main():
                     heuristic_path=args.heuristic,
                     session_labels=args.session,
                     subject_labels=args.subject,
-                    verbose=args.verbose)
+                    verbose=args.verbose,
+                    dry_run=args.dry_run)
 
 if __name__ == '__main__':
     main()
