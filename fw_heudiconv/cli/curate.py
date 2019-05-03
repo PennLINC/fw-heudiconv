@@ -11,16 +11,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fwHeuDiConv-curator')
 
 def pretty_string_seqinfo(seqinfo):
-
-    rep = '{protocol_name}: \n\t\t[TR={tr:.2f} TE={te:.4f} ' \
+    tr = seqinfo.TR if seqinfo.TR is not None else -1.0
+    te = seqinfo.TE if seqinfo.TE is not None else -1.0
+    rep = '{protocol_name}: \n\t\t[TR={tr:} TE={te} ' \
           'shape=({dim1}, {dim2}, {dim3}, {dim4}) ' \
           'image_type={image_type}] ({idnum})\n'
-    return rep.format(protocol_name=seqinfo.protocol_name, tr=seqinfo.TR,
-                      te=seqinfo.TE, dim1=seqinfo.dim1, dim2=seqinfo.dim2,
-                      dim3=seqinfo.dim3, dim4=seqinfo.dim4,
-                      image_type=seqinfo.image_type,
-                      idnum=seqinfo.series_id)
-
+    try:
+        rep_fmt = rep.format(protocol_name=seqinfo.protocol_name, tr=tr,
+                             te=te, dim1=seqinfo.dim1, dim2=seqinfo.dim2,
+                             dim3=seqinfo.dim3, dim4=seqinfo.dim4,
+                             image_type=seqinfo.image_type,
+                             idnum=seqinfo.series_id)
+    except Exception as e:
+        logger.warning("Unparseable field in %s.\n\n Got error: %s", seqinfo, e)
+        rep_fmt = 'ERROR'
+    return rep_fmt
 
 
 def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,

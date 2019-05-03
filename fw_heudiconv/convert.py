@@ -2,6 +2,7 @@ import os
 import ast
 import json
 import logging
+import operator
 
 logger = logging.getLogger('fwHeuDiConv-curator')
 
@@ -71,6 +72,7 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
         bids_keys = ['sub', 'ses', 'folder', 'name']
         ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
 
+        sorted_files = files.sort(key=operator.itemgetter("name"))
         for fnum, f in enumerate(files):
             bids_vals = template.format(subject=subj_label, session=ses_fmt, item=fnum+1).split("/")
             bids_dict = dict(zip(bids_keys, bids_vals))
