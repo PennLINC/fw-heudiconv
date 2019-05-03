@@ -90,9 +90,9 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
                                          bids_dict['folder']])
             new_bids['error_message'] = ""
             new_bids['valid'] = True
-            if dry_run:
-                print(f.name, "->", new_bids["Path"] + "/" + new_bids['Filename'])
-            else:
+            destination = f.name + "->" + new_bids["Path"] + "/" + new_bids['Filename']
+            logger.debug(destination)
+            if not dry_run:
                 acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
 
 
