@@ -42,7 +42,7 @@ def update_intentions(client, session):
                     f.parent.update_file_info(f.name, {"IntendedFor": target_files})
 
 
-def apply_heuristic(client, heur, acquisition_ids, dry_run=False):
+def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[]):
     """ Apply heuristic to rename files
 
     This function applies the specified heuristic to the files given in the
@@ -56,9 +56,9 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False):
             of acquisitions to which the naming convention applies
     """
     suffixes = {'nifti': ".nii.gz", 'bval': ".bval", 'bvec': ".bvec"}
-    ftypes = ['nifti', 'bval', 'bvec']
+    ftypes = ['nifti', 'bval', 'bvec', 'tsv']
 
-    for acq in acquisition_ids:
+    for acq in set(acquisition_ids):
 
         acquisition_object = client.get(acq)
         sess_label = client.get(acquisition_object.parents.session).label
@@ -70,7 +70,7 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False):
         bids_vals = heur[0].format(subject=subj_label, session=ses_fmt).split("/")
         bids_dict = dict(zip(bids_keys, bids_vals))
 
-        for f in files:
+        for fnum, f in enumerate(files):
             if "e1.nii.gz" in f.name:
                 suffix = "1" + suffixes[f.type]
             elif "e2.nii.gz" in f.name:
@@ -91,7 +91,7 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False):
             new_bids['error_message'] = ""
             new_bids['valid'] = True
             if dry_run:
-                print(f.name, "->", json.dumps(new_bids, indent=4))
+                print(f.name, "->", new_bids["Path"] + "/" + new_bids['Filename'])
             else:
                 acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
 
