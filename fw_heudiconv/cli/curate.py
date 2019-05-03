@@ -10,9 +10,21 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fwHeuDiConv-curator')
 
+def pretty_string_seqinfo(seqinfo):
+
+    rep = '{protocol_name}: \n\t\t[TR={tr:.2f} TE={te:.4f} ' \
+          'shape=({dim1}, {dim2}, {dim3}, {dim4}) ' \
+          'image_type={image_type}] ({idnum})\n'
+    return rep.format(protocol_name=seqinfo.protocol_name, tr=seqinfo.TR,
+                      te=seqinfo.TE, dim1=seqinfo.dim1, dim2=seqinfo.dim2,
+                      dim3=seqinfo.dim3, dim4=seqinfo.dim4,
+                      image_type=seqinfo.image_type,
+                      idnum=seqinfo.series_id)
+
+
 
 def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
-                    session_labels=None, verbose=True, dry_run=False):
+                    session_labels=None, dry_run=False):
     """Converts a project to bids by reading the file entries from flywheel
     and using the heuristics to write back to the BIDS namespace of the flywheel
     containers
@@ -29,13 +41,23 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
 
     logger.info("Querying Flywheel server...")
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
+    logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id, )
     sessions = client.get_project_sessions(project_obj.id)
     # filters
     if subject_labels:
         sessions = [s for s in sessions if s.subject['label'] in subject_labels]
     if session_labels:
         sessions = [s for s in sessions if s.label in session_labels]
+    logger.debug('Found sessions:\n\t%s',
+                 "\n\t".join(['%s (%s)' % (ses['label'], ses.id) for ses in sessions]))
+
+    # Find SeqInfos to apply the heuristic to
     seq_infos = get_seq_info(client, project_label, sessions)
+    logger.debug(
+        "Found SeqInfos:\n%s",
+        "\n\t".join([pretty_string_seqinfo(seq) for seq in seq_infos]))
+
+
     logger.info("Loading heuristic file...")
     heuristic = utils.load_heuristic(heuristic_path)
 
@@ -49,6 +71,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     if hasattr(heuristic, "IntendedFor"):
         logger.info("Updating IntendedFor fields based on heuristic file")
         intention_map.update(heuristic.IntendedFor)
+        logger.debug("Intention map: %s", intention_map)
 
     for key, val in to_rename.items():
         apply_heuristic(client, key, val, dry_run, intention_map[key])
@@ -103,15 +126,18 @@ def main():
         fw = flywheel.Client()
     assert fw, "Your Flywheel CLI credentials aren't set!"
     parser = get_parser()
-
     args = parser.parse_args()
+
+    # Print a lot if requested
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+
     project_label = ' '.join(args.project)
     convert_to_bids(client=fw,
                     project_label=project_label,
                     heuristic_path=args.heuristic,
                     session_labels=args.session,
                     subject_labels=args.subject,
-                    verbose=args.verbose,
                     dry_run=args.dry_run)
 
 if __name__ == '__main__':

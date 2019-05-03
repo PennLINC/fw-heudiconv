@@ -1,7 +1,9 @@
 import os
 import ast
 import json
+import logging
 
+logger = logging.getLogger('fwHeuDiConv-curator')
 
 def build_intention_path(f):
     """Builds a string of the path to the file w.r.t. subject dir
@@ -72,12 +74,7 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
         bids_dict = dict(zip(bids_keys, bids_vals))
 
         for fnum, f in enumerate(files):
-            if "e1.nii.gz" in f.name:
-                suffix = "1" + suffixes[f.type]
-            elif "e2.nii.gz" in f.name:
-                suffix = "2" + suffixes[f.type]
-            else:
-                suffix = suffixes[f.type]
+            suffix = suffixes[f.type]
 
             if 'BIDS' not in f.info:
                 f.info['BIDS'] = ""
