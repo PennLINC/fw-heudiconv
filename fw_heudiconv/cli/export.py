@@ -7,7 +7,8 @@ import json
 
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('bids-exporter')
+logger = logging.getLogger('fwHeuDiConv-exporter')
+
 
 def get_from_dict(dataDict, maplist):
 
@@ -20,26 +21,21 @@ def get_from_dict(dataDict, maplist):
         return dataDict[first]
 
 
-def key_exists(obj, chain):
-
-    #https://stackoverflow.com/questions/43491287/elegant-way-to-check-if-a-nested-key-exists-in-a-python-dict
-    _key = chain[0]
-    if _key in obj:
-        if obj[_key]:
-            if len(chain) > 1:
-                return key_exists(obj[_key], chain[1:])
-            else:
-                obj[_key]
-        else:
-            return None
-
-
 def get_metadata(container, nested_key_list):
 
-    if key_exists(container, nested_key_list):
+    try:
         return(get_from_dict(container, nested_key_list))
-    else:
+    except:
         return None
+
+
+def get_nested(dct, *keys):
+    for key in keys:
+        try:
+            dct = dct[key]
+        except KeyError:
+            return None
+    return dct
 
 
 def download_sidecar(d, fpath, remove_bids=True):
@@ -48,7 +44,7 @@ def download_sidecar(d, fpath, remove_bids=True):
         del d['BIDS']
 
     with open(fpath, 'w') as sidecar:
-        output = json.dump(d, fp=sidecar, sort_keys=True, indent=4)
+        json.dump(d, fp=sidecar, sort_keys=True, indent=4)
 
 
 def gather_bids(client, project_label, subject_labels=None, session_labels=None):
@@ -70,12 +66,11 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
 
     # dataset description
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
-
     # get dataset description file
     to_download['dataset_description'].append({
         'name': 'dataset_description.json',
         'type': 'dataset_description',
-        'data': get_metadata(project_obj, ['info', 'BIDS'])
+        'data': get_nested(project_obj, 'info', 'BIDS')
     })
     # download any project level files
     logger.info("Processing project files...")
@@ -104,7 +99,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
                 'name': sf.name,
                 'type': sf.type,
                 'data': ses.id,
-                'BIDS': get_metadata(sf, ['info', 'BIDS'])
+                'BIDS': get_nested(sf, 'info', 'BIDS')
             }
             to_download['session'].append(d)
 
@@ -119,24 +114,23 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
             'name': af.name,
             'type': af.type,
             'data': af.parent.id,
-            'BIDS': get_metadata(af, ['info', 'BIDS']),
-            'sidecar': get_metadata(af, ['info'])
+            'BIDS': get_nested(af, 'info', 'BIDS'),
+            'sidecar': get_nested(af, 'info')
         }
-        if bool(d['BIDS']) and d['BIDS'] != "NA":
+        if d['BIDS'] and d['BIDS'] != "NA":
             to_download['acquisition'].append(d)
-
     return to_download
 
 
 def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap']):
 
-    logger
+    logger.info("Downloading files...")
     # handle dataset description
     if to_download['dataset_description']:
         description = to_download['dataset_description'][0]
 
         path = "/".join([root_path, description['name']])
-        print(path)
+
         download_sidecar(description['data'], path, remove_bids=False)
 
     # deal with project level files
@@ -157,13 +151,12 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
 
     # deal with acquisition level files
     for fi in to_download['acquisition']:
-
-        project_path = get_metadata(fi, ['BIDS', 'Path'])
-        folder = get_metadata(fi, ['BIDS', 'Folder'])
-        ignore = get_metadata(fi, ['BIDS', 'ignore'])
+        project_path = get_nested(fi, 'BIDS', 'Path')
+        folder = get_nested(fi, 'BIDS', 'Folder')
+        ignore = get_nested(fi, 'BIDS', 'ignore')
 
         if project_path and folder in folders_to_download and not ignore and 'sidecar' in fi:
-            fname = get_metadata(fi, ['BIDS', 'Filename'])
+            fname = get_nested(fi, 'BIDS', 'Filename')
             extensions = ['nii.gz', 'bval', 'bvec']
             sidecar_name = fname
             for x in extensions:
@@ -172,22 +165,20 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
             download_path = '/'.join([root_path, project_path])
             file_path = '/'.join([download_path, fname])
             sidecar_path = '/'.join([download_path, sidecar_name])
-            print(fi['name'])
-            print(file_path)
-            print(sidecar_path)
             acq = client.get(fi['data'])
-            print(acq.label)
 
             if not os.path.exists(download_path):
                 os.makedirs(download_path)
             acq.download_file(fi['name'], file_path)
             download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
+    logger.info("Done!")
+
 
 def get_parser():
 
     parser = argparse.ArgumentParser(
-        description="Export BIDS compliant data curated with fw-heudiconv")
+        description="Export BIDS compliant data")
     parser.add_argument(
         "--project",
         help="The project in flywheel",
@@ -203,12 +194,14 @@ def get_parser():
     parser.add_argument(
         "--subject",
         help="The subject to curate",
+        nargs="+",
         default=None,
         type=str
     )
     parser.add_argument(
         "--session",
         help="The session to curate",
+        nargs="+",
         default=None,
         type=str
     )

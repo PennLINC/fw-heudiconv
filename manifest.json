@@ -2,7 +2,7 @@
 	"name": "fw-heudiconv",
 	"label": "Flywheel HeuDiConv",
 	"description": "Created by the gear builder. Edit the manifest file to give this gear a description!",
-	"version": "0.1.4_0.1.0",
+	"version": "0.1.9_0.1.0",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"
@@ -16,9 +16,9 @@
 	"config": {
 		"action": {
 			"default": "Curate",
-			"description": "Curate: apply heuristic to metadata. Export: create zip of BIDS tree",
+			"description": "Preview: Preview a BIDS tree. Curate: apply heuristic to metadata. Export: create zip of BIDS tree",
 			"type": "string",
-			"enum": ["Curate", "Export"]
+			"enum": ["Curate", "Export", "Preview"]
 		},
 		"do_whole_project": {
 			"default": false,
@@ -30,28 +30,18 @@
 			"description": "Export/Curate all files instead of just func/fmap/anat/dwi",
 			"type": "boolean"
 		},
-		"subject_id": {
-			"default": "",
-			"description": "Only use these subjects",
-			"type": "string"
-		},
-		"session_id": {
-			"default": "",
-			"description": "Only use these sessions",
-			"type": "string"
-		}
 	},
 	"command": "./fw_heudiconv_run.py",
-	"author": "Matthew Cieslak",
-	"maintainer": "Matthew Cieslak",
-	"cite": "List citations here.",
+	"author": "Tinashe Michael Tapera",
+	"maintainer": "Tinashe Michael Tapera",
+	"cite": "",
 	"license": "Other",
 	"source": "",
-	"url": "",
+	"url": "https://github.com/PennBBL/fw-heudiconv",
 	"custom": {
 		"gear-builder": {
 			"category": "analysis",
-			"image": "pennbbl/fw-heudiconv:0.1.4_0.1.0"
+			"image": "pennbbl/fw-heudiconv:0.1.9_0.1.0"
 		},
 		"flywheel":{"suite": "PennBBL"}
 	}

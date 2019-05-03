@@ -39,7 +39,6 @@ def acquisition_to_heudiconv(acq, context):
         to_convert.append(utils.SeqInfo(
             context['total'],
             zip_info.members[0].path if zip_info else None,
-            #info.get("SeriesID"),
             acq.id,
             fileobj.name,
             '-',
@@ -92,8 +91,7 @@ def session_to_seq_info(client, session, context):
 
         for info in acquisition_to_heudiconv(acquisition, context):
             log.debug('info: %s', info)
-            seq_info[info] = {}  # This would be set to a list of filepaths in
-                                 # heudiconv
+            seq_info[info] = {}  # This would be set to a list of filepaths in heudiconv
     log.debug('session=%s', session.label)
     log.debug('Got %s seqinfos', len(seq_info.keys()))
     return seq_info
@@ -129,7 +127,6 @@ def get_sessions(client, project, subject=None, session=None):
             print('%s' % (p.label))
         raise ValueError("Could not find \"{0}\" project on Flywheel!".format(project))
 
-
     if subject is not None:
         subject = project_object.subjects.find_one('code="{}"'.format(subject))
         sessions = subject.sessions()
@@ -139,6 +136,7 @@ def get_sessions(client, project, subject=None, session=None):
         sessions = project_object.sessions()
 
     return sessions
+
 
 def get_seq_info(client, project, sessions, grouping=None):
 

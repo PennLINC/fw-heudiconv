@@ -1,5 +1,6 @@
 import os
 import ast
+import json
 
 
 def build_intention_path(f):
@@ -9,6 +10,7 @@ def build_intention_path(f):
     folder = f.info["BIDS"]["Folder"]
     ses = fname.split("_")[1]
     return("/".join([ses, folder, fname]))
+
 
 def update_intentions(client, session):
     """Updates the IntendedFor field of all files in a session with intentions
@@ -25,14 +27,22 @@ def update_intentions(client, session):
     files = [f for acq in session.acquisitions() for f in acq.files if f.type in ftypes]
 
     for f in files:
-        if f.info['BIDS']["IntendedFor"]:
-            folder = [x["Folder"] for x in ast.literal_eval(f.info['BIDS']['IntendedFor'])]
-            target_files = [g for g in files if g.info['BIDS']['Folder'] in folder]
-            target_files = [build_intention_path(g) for g in target_files]
+        if 'BIDS' in f.info:
+            if 'IntendedFor' in f.info['BIDS']:
+                if f.info['BIDS']["IntendedFor"]:
+                    try:
+                        folder = [x["Folder"] for x in
+                                  ast.literal_eval(f.info['BIDS']['IntendedFor'])]
+                    except Exception as e:
+                        logger.warning(e)
+                        continue
+                    target_files = [g for g in files if g.info['BIDS']['Folder'] in folder]
+                    target_files = [build_intention_path(g) for g in target_files]
 
-            f.parent.update_file_info(f.name, {"IntendedFor": target_files})
+                    f.parent.update_file_info(f.name, {"IntendedFor": target_files})
 
-def apply_heuristic(client, heur, acquisition_ids):
+
+def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[]):
     """ Apply heuristic to rename files
 
     This function applies the specified heuristic to the files given in the
@@ -46,9 +56,10 @@ def apply_heuristic(client, heur, acquisition_ids):
             of acquisitions to which the naming convention applies
     """
     suffixes = {'nifti': ".nii.gz", 'bval': ".bval", 'bvec': ".bvec"}
-    ftypes = ['nifti', 'bval', 'bvec']
+    ftypes = ['nifti', 'bval', 'bvec', 'tsv']
+    template, outtype, annotation_classes = heur
 
-    for acq in acquisition_ids:
+    for acq in set(acquisition_ids):
 
         acquisition_object = client.get(acq)
         sess_label = client.get(acquisition_object.parents.session).label
@@ -56,10 +67,11 @@ def apply_heuristic(client, heur, acquisition_ids):
 
         files = [f for f in acquisition_object.files if f.type in ftypes]
         bids_keys = ['sub', 'ses', 'folder', 'name']
-        bids_vals = heur[0].format(subject=subj_label, session="ses-"+sess_label).split("/")
+        ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
+        bids_vals = template.format(subject=subj_label, session=ses_fmt).split("/")
         bids_dict = dict(zip(bids_keys, bids_vals))
 
-        for f in files:
+        for fnum, f in enumerate(files):
             if "e1.nii.gz" in f.name:
                 suffix = "1" + suffixes[f.type]
             elif "e2.nii.gz" in f.name:
@@ -67,17 +79,22 @@ def apply_heuristic(client, heur, acquisition_ids):
             else:
                 suffix = suffixes[f.type]
 
+            if 'BIDS' not in f.info:
+                f.info['BIDS'] = ""
             new_bids = f.info['BIDS']
             if new_bids == "NA" or new_bids == "":
                 new_bids = add_empty_bids_fields(bids_dict['folder'], bids_dict['name'])
             new_bids['Filename'] = bids_dict['name']+suffix
             new_bids['Folder'] = bids_dict['folder']
             new_bids['Path'] = "/".join([bids_dict['sub'],
-                                        bids_dict['ses'],
-                                        bids_dict['folder']])
+                                         bids_dict['ses'],
+                                         bids_dict['folder']])
             new_bids['error_message'] = ""
             new_bids['valid'] = True
-            acq.update_file_info(f.name, {'BIDS': new_bids})
+            if dry_run:
+                print(f.name, "->", new_bids["Path"] + "/" + new_bids['Filename'])
+            else:
+                acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
 
 
 def add_empty_bids_fields(folder, fname=None):

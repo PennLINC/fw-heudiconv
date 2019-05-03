@@ -1,12 +1,18 @@
 import argparse
 import warnings
 import flywheel
+from collections import defaultdict
 from ..convert import apply_heuristic, update_intentions
 from ..query import get_sessions, get_seq_info
 from heudiconv import utils
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('fwHeuDiConv-curator')
 
 
-def convert_to_bids(client, project_label, heuristic_path, subject_code=None, session_label=None, verbose=True):
+def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
+                    session_labels=None, verbose=True, dry_run=False):
     """Converts a project to bids by reading the file entries from flywheel
     and using the heuristics to write back to the BIDS namespace of the flywheel
     containers
@@ -18,21 +24,34 @@ def convert_to_bids(client, project_label, heuristic_path, subject_code=None, se
             known heuristic
         subject_code (str): The subject code
         session_label (str): The session label
+        dry_run (bool): Print the changes, don't apply them on flywheel
     """
 
-    if verbose: print("Querying Flywheel server...")
-    sessions = get_sessions(client, project_label, subject=subject_code, session=session_label)
+    logger.info("Querying Flywheel server...")
+    project_obj = client.projects.find_first('label="{}"'.format(project_label))
+    sessions = client.get_project_sessions(project_obj.id)
+    # filters
+    if subject_labels:
+        sessions = [s for s in sessions if s.subject['label'] in subject_labels]
+    if session_labels:
+        sessions = [s for s in sessions if s.label in session_labels]
     seq_infos = get_seq_info(client, project_label, sessions)
-    if verbose: print("Loading heuristic file...")
+    logger.info("Loading heuristic file...")
     heuristic = utils.load_heuristic(heuristic_path)
-    BIDS_objects = {}
-    if verbose: print("Applying heuristic to query results...")
+
+    logger.info("Applying heuristic to query results...")
     to_rename = heuristic.infotodict(seq_infos)
-    if verbose: print("Applying changes to files...")
+
+    if not dry_run:
+        logger.info("Applying changes to files...")
+
+    intention_map = defaultdict(list)
+    if hasattr(heuristic, "IntendedFor"):
+        logger.info("Updating IntendedFor fields based on heuristic file")
+        intention_map.update(heuristic.IntendedFor)
+
     for key, val in to_rename.items():
-        apply_heuristic(client, key, val)
-    for s in sessions:
-        update_intentions(s)
+        apply_heuristic(client, key, val, dry_run, intention_map[key])
 
 
 def get_parser():
@@ -52,18 +71,27 @@ def get_parser():
     )
     parser.add_argument(
         "--subject",
-        help="The name of the subject",
+        help="The subject label(s)",
+        nargs="+",
         default=None
     )
     parser.add_argument(
         "--session",
-        help="The session to curate",
+        help="The session label(s)",
+        nargs="+",
         default=None
     )
     parser.add_argument(
         "--verbose",
         help="Print ongoing messages of progress",
-        default=True
+        action='store_true',
+        default=False
+    )
+    parser.add_argument(
+        "--dry_run",
+        help="Don't apply changes",
+        action='store_true',
+        default=False
     )
 
     return parser
@@ -81,9 +109,10 @@ def main():
     convert_to_bids(client=fw,
                     project_label=project_label,
                     heuristic_path=args.heuristic,
-                    session_label=args.session,
-                    subject_code=args.subject,
-                    verbose=args.verbose)
+                    session_labels=args.session,
+                    subject_labels=args.subject,
+                    verbose=args.verbose,
+                    dry_run=args.dry_run)
 
 if __name__ == '__main__':
     main()

@@ -2,31 +2,81 @@
 import json
 import flywheel
 import os
-from fw_heudiconv.cli import curate, download
+import shutil
+import logging
+from fw_heudiconv.cli import curate, export
 
-print('This is an example python script.')
-invocation  = json.loads(open('config.json').read())
-config      = invocation['config']
-inputs      = invocation['inputs']
+
+# logging stuff
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('fw-heudiconv-gear')
+logger.info("=======: fw-heudiconv starting up :=======")
+
+# start up inputs
+invocation = json.loads(open('config.json').read())
+config = invocation['config']
+inputs = invocation['inputs']
 destination = invocation['destination']
 
-# QUERY ANALYSIS ID TO PASS AS INPUTS TO CURATE.PY or DOWNLOAD.PY
-
-# Display everything provided to the job
-def display(section):
-    print(json.dumps(section, indent=4, sort_keys=True))
-
-print('\nConfig:')
-display(config)
-print('\nDestination:')
-display(destination)
-print('\nInputs:')
-display(inputs)
-
-# Make some simple calls to the API
 fw = flywheel.Flywheel(inputs['api-key']['key'])
 user = fw.get_current_user()
-config = fw.get_config()
 
-print('You are logged in as ' + user.firstname + ' ' + user.lastname +
-      ' at ' + config.site.api_url[:-4])
+# start up logic:
+heuristic = inputs['heuristic']['location']['path']
+analysis_container = fw.get(destination['id'])
+project_container = fw.get(analysis_container.parents['project'])
+project_label = project_container.label
+
+# whole project, single session?
+do_whole_project = config['do_whole_project']
+
+if not do_whole_project:
+
+    # find session object origin
+    session_container = fw.get(analysis_container.parent['id'])
+    sessions = [session_container.label]
+    # find subject object origin
+    subject_container = fw.get(session_container.parents['subject'])
+    subjects = [subject_container.label]
+
+else:
+    sessions = None
+    subjects = None
+
+# logging stuff
+logger.info("Running fw-heudiconv with the following settings:")
+logger.info("Project: {}".format(project_label))
+logger.info("Subject(s): {}".format(subjects))
+logger.info("Session(s): {}".format(sessions))
+logger.info("Heuristic found at: {}".format(heuristic))
+logger.info("Action: {}".format(config['action']))
+
+# action
+if config['action'] == "Curate":
+
+    curate.convert_to_bids(fw, project_label, heuristic, subjects, sessions, dry_run=False)
+
+elif config['action'] == "Export":
+
+    downloads = export.gather_bids(fw, project_label, subjects, sessions)
+    export.download_bids(fw, downloads, "output")
+
+    # tidy up
+    output_dir = "/flywheel/v0/output"
+    os.system("zip -r {}_BIDSexport.zip output/*".format(destination['id']))
+    os.system("mv *.zip output")
+    to_remove = os.listdir(output_dir)
+    to_remove = ["{}/{}".format(output_dir, x) for x in to_remove if ".zip" not in x]
+    for x in to_remove:
+        if os.path.isfile(x):
+            os.remove(x)
+        else:
+            shutil.rmtree(x)
+
+elif config['action'] == "Preview":
+
+    curate.convert_to_bids(fw, project_label, heuristic, subjects, sessions, dry_run=True)
+
+else:
+
+    raise Exception('Action not specified correctly!')
