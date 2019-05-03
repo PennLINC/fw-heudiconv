@@ -70,10 +70,10 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
         files = [f for f in acquisition_object.files if f.type in ftypes]
         bids_keys = ['sub', 'ses', 'folder', 'name']
         ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
-        bids_vals = template.format(subject=subj_label, session=ses_fmt).split("/")
-        bids_dict = dict(zip(bids_keys, bids_vals))
 
         for fnum, f in enumerate(files):
+            bids_vals = template.format(subject=subj_label, session=ses_fmt, item=fnum+1).split("/")
+            bids_dict = dict(zip(bids_keys, bids_vals))
             suffix = suffixes[f.type]
 
             if 'BIDS' not in f.info:
