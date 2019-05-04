@@ -15,37 +15,8 @@ def build_intention_path(f):
     return("/".join([ses, folder, fname]))
 
 
-def update_intentions(client, session):
-    """Updates the IntendedFor field of all files in a session with intentions
-
-    Fieldmap scans need to be pointed toward the scans they map; this function
-    loops through files in a session, and if it is a fieldmap/has a folder that
-    it's intended for, finds any files in the folder and builds a list of paths
-
-    Args:
-        client (Client): The flywheel sdk client
-        session (obj): The flywheel session object
-    """
-    ftypes = ['nifti', 'bval', 'bvec']
-    files = [f for acq in session.acquisitions() for f in acq.files if f.type in ftypes]
-
-    for f in files:
-        if 'BIDS' in f.info:
-            if 'IntendedFor' in f.info['BIDS']:
-                if f.info['BIDS']["IntendedFor"]:
-                    try:
-                        folder = [x["Folder"] for x in
-                                  ast.literal_eval(f.info['BIDS']['IntendedFor'])]
-                    except Exception as e:
-                        logger.warning(e)
-                        continue
-                    target_files = [g for g in files if g.info['BIDS']['Folder'] in folder]
-                    target_files = [build_intention_path(g) for g in target_files]
-
-                    f.parent.update_file_info(f.name, {"IntendedFor": target_files})
-
-
-def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[]):
+def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[],
+                    metadata_extras={}):
     """ Apply heuristic to rename files
 
     This function applies the specified heuristic to the files given in the
@@ -72,7 +43,7 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
         bids_keys = ['sub', 'ses', 'folder', 'name']
         ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
 
-        sorted_files = files.sort(key=operator.itemgetter("name"))
+        files.sort(key=operator.itemgetter("name"))
         for fnum, f in enumerate(files):
             bids_vals = template.format(subject=subj_label, session=ses_fmt, item=fnum+1).split("/")
             bids_dict = dict(zip(bids_keys, bids_vals))
@@ -81,7 +52,7 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
             if 'BIDS' not in f.info:
                 f.info['BIDS'] = ""
             new_bids = f.info['BIDS']
-            if new_bids == "NA" or new_bids == "":
+            if new_bids in ("NA", ""):
                 new_bids = add_empty_bids_fields(bids_dict['folder'], bids_dict['name'])
             new_bids['Filename'] = bids_dict['name']+suffix
             new_bids['Folder'] = bids_dict['folder']
@@ -92,8 +63,21 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
             new_bids['valid'] = True
             destination = f.name + "->" + new_bids["Path"] + "/" + new_bids['Filename']
             logger.debug(destination)
+
             if not dry_run:
                 acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
+
+            if intended_for and (f.name.endswith(".nii.gz") or f.name.endswith(".nii")):
+                intendeds = [intend.format(subject=subj_label, session=ses_fmt)
+                             for intend in intended_for]
+                logger.debug("%s IntendedFor: %s", f.name, intendeds)
+                if not dry_run:
+                    acquisition_object.update_file_info(f.name, {'IntendedFor': intendeds})
+
+            if metadata_extras:
+                logger.debug("%s metadata: %s", f.name, metadata_extras)
+                if not dry_run:
+                    acquisition_object.update_file_info(f.name, metadata_extras)
 
 
 def add_empty_bids_fields(folder, fname=None):
