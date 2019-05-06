@@ -4,19 +4,13 @@ import logging
 import re
 import warnings
 import collections
+from nibabel.nicom.dicomwrappers import wrapper_from_data
 
 from heudiconv import utils
 
 CONVERTABLE_TYPES = ("bvec", "bval", "nifti")
 
 log = logging.getLogger(__name__)
-
-
-class DotDict(dict):
-    """dot.notation access to dictionary attributes"""
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
 
 
 def acquisition_to_heudiconv(acq, context):
@@ -28,13 +22,30 @@ def acquisition_to_heudiconv(acq, context):
         dicom = dicoms[0]
         zip_info = acq.get_file_zip_info(dicom.name)
         context['total'] += len(zip_info.members)
+        dcm_info = dicom.info
     else:
         zip_info = None
+        dcm_info = {}
+    # Make it a nicom wrapper to handle all sorts of different dicom styles
+    mw = wrapper_from_data(dcm_info)
+    num_dicoms = len(zip_info.members) if zip_info else -1
+    image_shape = mw.image_shape
+    if image_shape is None:
+        image_shape = (-1, -1, -1, -1)
+    else:
+        image_shape = mw.image_shape + (num_dicoms,)
+        while len(image_shape) < 4:
+            image_shape = image_shape + (-1,)
+
     for fileobj in acq.files:
         log.debug('filename: %s', fileobj.name)
         if fileobj.type not in CONVERTABLE_TYPES:
             continue
         info = fileobj.info
+
+        # Make it a nicom wrapper to handle all sorts of different dicom styles
+        mw = wrapper_from_data(info)
+
         log.debug('uid: %s', info.get("SeriesInstanceUID"))
         to_convert.append(utils.SeqInfo(
             context['total'],
@@ -43,10 +54,10 @@ def acquisition_to_heudiconv(acq, context):
             fileobj.name,
             '-',
             '-',
-            0,
-            0,
-            0,
-            len(zip_info.members if zip_info else []),
+            image_shape[0],
+            image_shape[1],
+            image_shape[2],
+            image_shape[3],
             # We can use the number of files in the
             # Or a corresponding dicom header field
             info.get("RepetitionTime"),

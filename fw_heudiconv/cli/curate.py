@@ -2,7 +2,7 @@ import argparse
 import warnings
 import flywheel
 from collections import defaultdict
-from ..convert import apply_heuristic, update_intentions
+from ..convert import apply_heuristic
 from ..query import get_sessions, get_seq_info
 from heudiconv import utils
 import logging
@@ -78,8 +78,15 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         intention_map.update(heuristic.IntendedFor)
         logger.debug("Intention map: %s", intention_map)
 
+    metadata_extras = defaultdict(list)
+    if hasattr(heuristic, "MetadataExtras"):
+        logger.info("Updating Medatata fields based on heuristic file")
+        metadata_extras.update(heuristic.MetadataExtras)
+        logger.debug("Metadata extras: %s", metadata_extras)
+
     for key, val in to_rename.items():
-        apply_heuristic(client, key, val, dry_run, intention_map[key])
+        apply_heuristic(client, key, val, dry_run, intention_map[key],
+                        metadata_extras[key])
 
 
 def get_parser():
