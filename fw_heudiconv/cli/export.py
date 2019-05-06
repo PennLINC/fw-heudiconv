@@ -12,34 +12,34 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fwHeuDiConv-exporter')
 
 
-def print_directory_tree(downloads_dict, folders_to_download=['anat', 'dwi', 'func', 'fmap']):
-
-    proj_dir = Node(downloads_dict['dataset_description'][0]['data']['Name'])
-    # project attachments NOT YET IMPLEMENTED
-    #project_files = [Node(f) for f in downloads_dict['project'] if get_nested(f, 'BIDS', 'Folder')]
-    # session attachments NOT YET IMPLEMENTED
-    #session_files = [f for f in downloads_dict['session'] if get_nested(f, 'BIDS', 'Folder')]
-
-    paths = [get_nested(f, 'BIDS', 'Path').split("/") for f in downloads_dict['acquisition'] if get_nested(f, 'BIDS', 'Folder') in folders_to_download]
-    acquisition_files = [get_nested(f, 'BIDS', 'Filename') for f in downloads_dict['acquisition'] if get_nested(f, 'BIDS', 'Folder') in folders_to_download]
-
-    for i, x in enumerate(paths):
-        x.append(acquisition_files[i])
-
-    for p in paths:
-        for x in p:
-
-        if not anytree.search.find(proj_dir, lambda node: node.name == p[0]):
-            subject = Node(p[0], parent = proj_dir)
-        if not anytree.search.find(proj_dir, lambda node: node.name == p[1]):
-            session = Node(p[1], parent = subject)
-        if not anytree.search.find(proj_dir, lambda node: node.name == p[2]):
-            folder = Node(p[2], parent = session)
-        if not anytree.search.find(proj_dir, lambda node: node.name == p[3]):
-            file = Node(p[3], parent = folder)
-
-
-    print(RenderTree(proj_dir, style=AsciiStyle()).by_attr())
+# def print_directory_tree(downloads_dict, folders_to_download=['anat', 'dwi', 'func', 'fmap']):
+#
+#     proj_dir = Node(downloads_dict['dataset_description'][0]['data']['Name'])
+#     # project attachments NOT YET IMPLEMENTED
+#     #project_files = [Node(f) for f in downloads_dict['project'] if get_nested(f, 'BIDS', 'Folder')]
+#     # session attachments NOT YET IMPLEMENTED
+#     #session_files = [f for f in downloads_dict['session'] if get_nested(f, 'BIDS', 'Folder')]
+#
+#     paths = [get_nested(f, 'BIDS', 'Path').split("/") for f in downloads_dict['acquisition'] if get_nested(f, 'BIDS', 'Folder') in folders_to_download]
+#     acquisition_files = [get_nested(f, 'BIDS', 'Filename') for f in downloads_dict['acquisition'] if get_nested(f, 'BIDS', 'Folder') in folders_to_download]
+#
+#     for i, x in enumerate(paths):
+#         x.append(acquisition_files[i])
+#
+#     for p in paths:
+#         for x in p:
+#
+#             if not anytree.search.find(proj_dir, lambda node: node.name == p[0]):
+#                 subject = Node(p[0], parent = proj_dir)
+#             if not anytree.search.find(proj_dir, lambda node: node.name == p[1]):
+#                 session = Node(p[1], parent = subject)
+#             if not anytree.search.find(proj_dir, lambda node: node.name == p[2]):
+#                 folder = Node(p[2], parent = session)
+#             if not anytree.search.find(proj_dir, lambda node: node.name == p[3]):
+#                 file = Node(p[3], parent = folder)
+#
+#
+#     print(RenderTree(proj_dir, style=AsciiStyle()).by_attr())
 
 
 def get_from_dict(dataDict, maplist):
@@ -273,7 +273,8 @@ def main():
     if not args.dry_run:
         download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download = args.folders)
     else:
-        print_directory_tree(downloads, args.folders)
+        pass
+        #print_directory_tree(downloads, args.folders)
 
 if __name__ == '__main__':
     main()
