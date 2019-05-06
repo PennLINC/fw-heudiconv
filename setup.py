@@ -2,12 +2,12 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-with open("requirements.txt", "r") as fh:
-    requirements = fh.read().splitlines()
+#with open("requirements.txt", "r") as fh:
+#    requirements = fh.read().splitlines()
 
 setuptools.setup(
     name="fw_heudiconv",
-    version="0.0.1",
+    version="0.0.4",
     author="Tinashe M. Tapera, Matt Cieslak, Harsha Kethineni",
     author_email="tinashemtapera@gmail.com",
     description="Use heudiconv heuristics for BIDS curation on flywheel",
