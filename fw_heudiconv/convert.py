@@ -61,7 +61,7 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
                                          bids_dict['folder']])
             new_bids['error_message'] = ""
             new_bids['valid'] = True
-            destination = f.name + "->" + new_bids["Path"] + "/" + new_bids['Filename']
+            destination = "\n" + f.name + "\n\t" + new_bids['Filename'] + " -> " + new_bids["Path"] + "/" + new_bids['Filename']
             logger.debug(destination)
 
             if not dry_run:
@@ -70,7 +70,7 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
             if intended_for and (f.name.endswith(".nii.gz") or f.name.endswith(".nii")):
                 intendeds = [intend.format(subject=subj_label, session=ses_fmt)
                              for intend in intended_for]
-                logger.debug("%s IntendedFor: %s", f.name, intendeds)
+                logger.debug("%s IntendedFor: %s", new_bids['Filename'], intendeds)
                 if not dry_run:
                     acquisition_object.update_file_info(f.name, {'IntendedFor': intendeds})
 

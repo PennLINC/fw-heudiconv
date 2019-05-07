@@ -1,8 +1,4 @@
-import flywheel
-import sys
 import logging
-import re
-import warnings
 import collections
 import os
 from nibabel.nicom.dicomwrappers import wrapper_from_data

@@ -3,7 +3,6 @@ import warnings
 import logging
 import flywheel
 import pandas as pd
-from tabulate import tabulate
 from ..query import get_seq_info
 
 
@@ -11,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-tabulator')
 
 
-def tabulate_bids(client, project_label, download_location=".", subject_labels=None,
+def tabulate_bids(client, project_label, path=".", subject_labels=None,
                   session_labels=None, dry_run=False):
     """Writes out a tabular form of the Seq Info objects
 
@@ -45,7 +44,7 @@ def tabulate_bids(client, project_label, download_location=".", subject_labels=N
     if dry_run:
         print(df)
     else:
-        df.to_csv("{}/{}_SeqInfo.tsv".format(download_location, project_label),
+        df.to_csv("{}/{}_SeqInfo.tsv".format(path, project_label),
                   sep="\t", index=False)
 
     logger.info("Done!")
@@ -62,7 +61,7 @@ def get_parser():
         required=True
     )
     parser.add_argument(
-        "--download_location",
+        "--path",
         help="Path to download .tsv file",
         default=".",
         required=False
@@ -104,13 +103,13 @@ def main():
     args = parser.parse_args()
 
     # Print a lot if requested
-    if args.verbose:
+    if args.verbose or args.dry_run:
         logger.setLevel(logging.DEBUG)
 
     project_label = ' '.join(args.project)
     tabulate_bids(client=fw,
                   project_label=project_label,
-                  download_location=args.download_location,
+                  path=args.path,
                   session_labels=args.session,
                   subject_labels=args.subject,
                   dry_run=args.dry_run)
