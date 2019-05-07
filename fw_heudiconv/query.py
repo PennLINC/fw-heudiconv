@@ -4,6 +4,7 @@ import logging
 import re
 import warnings
 import collections
+import os
 from nibabel.nicom.dicomwrappers import wrapper_from_data
 
 from heudiconv import utils
@@ -168,3 +169,16 @@ def get_seq_info(client, project, sessions, grouping=None):
             seq_infos[session.id] = session_to_seq_info(client, session, context)
 
     return seq_infos
+
+
+def print_directory_tree(startpath):
+    '''
+    https://stackoverflow.com/questions/9727673/list-directory-tree-structure-in-python
+    '''
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        print('{}{}/'.format(indent, os.path.basename(root)))
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            print('{}{}'.format(subindent, f))

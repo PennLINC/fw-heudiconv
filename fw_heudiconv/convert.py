@@ -85,6 +85,8 @@ def add_empty_bids_fields(folder, fname=None):
     if "fmap" in folder:
         if not fname:
             print("No filename given, can't set intentions for this fieldmap!")
+            IntendedFor = ""
+            Modality = ""
         elif "epi" in fname:
             IntendedFor = "[{'Folder': 'dwi'}]"
             Modality = "epi"
