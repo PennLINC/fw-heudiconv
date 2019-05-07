@@ -62,7 +62,6 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         "Found SeqInfos:\n%s",
         "\n\t".join([pretty_string_seqinfo(seq) for seq in seq_infos]))
 
-
     logger.info("Loading heuristic file...")
     heuristic = utils.load_heuristic(heuristic_path)
 
@@ -84,9 +83,12 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         metadata_extras.update(heuristic.MetadataExtras)
         logger.debug("Metadata extras: %s", metadata_extras)
 
+    subject_rename = heuristic.get("ReplaceSubject")
+    session_rename = heuristic.get("ReplaceSession")
+
     for key, val in to_rename.items():
         apply_heuristic(client, key, val, dry_run, intention_map[key],
-                        metadata_extras[key])
+                        metadata_extras[key], subject_rename, session_rename)
 
 
 def get_parser():
@@ -151,6 +153,7 @@ def main():
                     session_labels=args.session,
                     subject_labels=args.subject,
                     dry_run=args.dry_run)
+
 
 if __name__ == '__main__':
     main()
