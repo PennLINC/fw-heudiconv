@@ -9,7 +9,7 @@ from anytree import Node, RenderTree, AsciiStyle
 
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('fwHeuDiConv-exporter')
+logger = logging.getLogger('fw-heudiconv-exporter')
 
 
 # def print_directory_tree(downloads_dict, folders_to_download=['anat', 'dwi', 'func', 'fmap']):
@@ -22,6 +22,19 @@ logger = logging.getLogger('fwHeuDiConv-exporter')
 #
 #     paths = [get_nested(f, 'BIDS', 'Path').split("/") for f in downloads_dict['acquisition'] if get_nested(f, 'BIDS', 'Folder') in folders_to_download]
 #     acquisition_files = [get_nested(f, 'BIDS', 'Filename') for f in downloads_dict['acquisition'] if get_nested(f, 'BIDS', 'Folder') in folders_to_download]
+#     dpaths = []
+#
+#     for x in downloads_dict['acquisition']:
+#         p = "/".join([get_nested(x, 'BIDS', 'Path'), get_nested(x, 'BIDS', 'Filename')])
+#         if "sourcedata" not in p and p != "/":
+#             dpaths.append(p)
+#
+#
+#     first_node = proj_dir
+#     for p in dpaths:
+#
+#         for i, val in enumerate(p.split("/")):
+#             print(i, val)
 #
 #     for i, x in enumerate(paths):
 #         x.append(acquisition_files[i])
@@ -39,7 +52,7 @@ logger = logging.getLogger('fwHeuDiConv-exporter')
 #                 file = Node(p[3], parent = folder)
 #
 #
-#     print(RenderTree(proj_dir, style=AsciiStyle()).by_attr())
+#     print(RenderTree(nodes, style=AsciiStyle()).by_attr())
 
 
 def get_from_dict(dataDict, maplist):
@@ -164,6 +177,14 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
         path = "/".join([root_path, description['name']])
 
         download_sidecar(description['data'], path, remove_bids=False)
+
+    if not any(x['name'] == '.bidsignore' for x in to_download['project']):
+        # write bids ignore
+        path = "/".join([root_path, ".bidsignore"])
+        ignored_modalities = ['asl/\n', 'qsm/\n']
+
+        with open(path, 'w') as bidsignore:
+            bidsignore.writelines(ignored_modalities)
 
     # deal with project level files
     # NOT YET IMPLEMENTED
