@@ -4,7 +4,7 @@ import flywheel
 import os
 import shutil
 import logging
-from fw_heudiconv.cli import curate, export
+from fw_heudiconv.cli import curate, export, tabulate
 
 
 # logging stuff
@@ -76,6 +76,10 @@ elif config['action'] == "Export":
 elif config['action'] == "Preview":
 
     curate.convert_to_bids(fw, project_label, heuristic, subjects, sessions, dry_run=True)
+
+elif config['action'] == "Tabulate":
+
+    tabulate.tabulate_bids(fw, project_label, "/flywheel/v0/output", subjects, sessions, dry_run=False)
 
 else:
 

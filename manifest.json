@@ -16,9 +16,9 @@
 	"config": {
 		"action": {
 			"default": "Curate",
-			"description": "Preview: Preview a BIDS tree. Curate: apply heuristic to metadata. Export: create zip of BIDS tree",
+			"description": "Preview: Preview a BIDS tree. Tabulate: Create a table of sequence information in a project. Curate: Apply heuristic to project. Export: Create zip of BIDS tree",
 			"type": "string",
-			"enum": ["Curate", "Export", "Preview"]
+			"enum": ["Curate", "Export", "Preview", "Tabulate"]
 		},
 		"do_whole_project": {
 			"default": false,

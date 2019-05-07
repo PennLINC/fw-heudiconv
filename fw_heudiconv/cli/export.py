@@ -4,31 +4,10 @@ import os
 import logging
 import warnings
 import json
-import shutil
-from pathlib import Path
-from ..query import print_directory_tree
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-exporter')
-
-
-def get_from_dict(dataDict, maplist):
-
-    first, rest = maplist[0], maplist[1:]
-
-    if rest:
-        # if `rest` is not empty, run the function recursively
-        return get_from_dict(dataDict[first], rest)
-    else:
-        return dataDict[first]
-
-
-def get_metadata(container, nested_key_list):
-
-    try:
-        return(get_from_dict(container, nested_key_list))
-    except:
-        return None
 
 
 def get_nested(dct, *keys):
@@ -124,36 +103,24 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     return to_download
 
 
-def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap'], dry_run=True):
+def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap']):
 
-    if dry_run:
-        logger.info("Preparing output directory tree...")
-    else:
-        logger.info("Downloading files...")
-    root_path = "/".join([root_path, "BIDS_output"])
-    Path(root_path).mkdir()
-
+    logger.info("Downloading files...")
     # handle dataset description
     if to_download['dataset_description']:
         description = to_download['dataset_description'][0]
+
         path = "/".join([root_path, description['name']])
 
-        if dry_run:
-            Path(path).touch()
-        else:
-            download_sidecar(description['data'], path, remove_bids=False)
+        download_sidecar(description['data'], path, remove_bids=False)
 
-    # write bids ignore
     if not any(x['name'] == '.bidsignore' for x in to_download['project']):
-
+        # write bids ignore
         path = "/".join([root_path, ".bidsignore"])
         ignored_modalities = ['asl/\n', 'qsm/\n']
 
-        if dry_run:
-            Path(path).touch()
-        else:
-            with open(path, 'w') as bidsignore:
-                bidsignore.writelines(ignored_modalities)
+        with open(path, 'w') as bidsignore:
+            bidsignore.writelines(ignored_modalities)
 
     # deal with project level files
     # NOT YET IMPLEMENTED
@@ -191,19 +158,10 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
 
             if not os.path.exists(download_path):
                 os.makedirs(download_path)
-
-            if dry_run:
-                Path(file_path).touch()
-                Path(sidecar_path).touch()
-            else:
-                acq.download_file(fi['name'], file_path)
-                download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
+            acq.download_file(fi['name'], file_path)
+            download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
     logger.info("Done!")
-
-    if dry_run:
-        print_directory_tree(root_path)
-        shutil.rmtree(root_path)
 
 
 def get_parser():
@@ -269,9 +227,11 @@ def main():
                             session_labels=args.session,
                             subject_labels=args.subject)
 
-
-    download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download = args.folders, dry_run=args.dry_run)
-
+    if not args.dry_run:
+        download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download = args.folders)
+    else:
+        pass
+        #print_directory_tree(downloads, args.folders)
 
 if __name__ == '__main__':
     main()
