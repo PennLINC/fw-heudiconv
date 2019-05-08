@@ -27,6 +27,7 @@ analysis_container = fw.get(destination['id'])
 project_container = fw.get(analysis_container.parents['project'])
 project_label = project_container.label
 dry_run = config['dry_run']
+action = config['action']
 
 # whole project, single session?
 do_whole_project = config['do_whole_project']
@@ -50,7 +51,7 @@ logger.info("Project: {}".format(project_label))
 logger.info("Subject(s): {}".format(subjects))
 logger.info("Session(s): {}".format(sessions))
 logger.info("Heuristic found at: {}".format(heuristic))
-logger.info("Action: {}".format(config['action']))
+logger.info("Action: {}".format(action))
 logger.info("Dry run: {}".format(dry_run))
 
 # action

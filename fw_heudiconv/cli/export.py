@@ -111,7 +111,7 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
         logger.info("Preparing output directory tree...")
     else:
         logger.info("Downloading files...")
-    root_path = "/".join([root_path, "BIDS_output"])
+    root_path = "/".join([root_path, "bids_dataset"])
     Path(root_path).mkdir()
     # handle dataset description
     if to_download['dataset_description']:
@@ -180,8 +180,8 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
                 download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
     logger.info("Done!")
+    print_directory_tree(root_path)
     if dry_run:
-        print_directory_tree(root_path)
         shutil.rmtree(root_path)
 
 

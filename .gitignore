@@ -105,7 +105,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-sessions.txt
 grmpy_heuristic.py
 fw-heudiconv-*
-fw_heudiconv_run.py
