@@ -3,7 +3,7 @@ import warnings
 import flywheel
 from collections import defaultdict
 from ..convert import apply_heuristic
-from ..query import get_sessions, get_seq_info
+from ..query import get_seq_info
 from heudiconv import utils
 import logging
 
