@@ -26,8 +26,12 @@ def tabulate_bids(client, project_label, path=".", subject_labels=None,
 
     logger.info("Querying Flywheel server...")
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
-    logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id, )
+    assert project_obj, "Project not found! Maybe check spelling...?"
+
+    logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id)
     sessions = client.get_project_sessions(project_obj.id)
+    assert sessions, "No sessions found!"
+
     # filters
     if subject_labels:
         sessions = [s for s in sessions if s.subject['label'] in subject_labels]
