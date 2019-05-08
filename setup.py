@@ -15,6 +15,11 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/PennBBL/fw_heudiconv",
     packages=setuptools.find_packages(),
+    install_requires=[
+        "flywheel-sdk",
+        "heudiconv",
+        "pandas"
+    ],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
