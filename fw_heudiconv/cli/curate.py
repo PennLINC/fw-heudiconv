@@ -84,8 +84,15 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
 
     if not dry_run:
         logger.info("Applying changes to files...")
-    subject_rename = heuristic.get("ReplaceSubject")
-    session_rename = heuristic.get("ReplaceSession")
+
+    if hasattr(heuristic, "ReplaceSubject"):
+        subject_rename = heuristic.ReplaceSubject
+    else:
+        subject_rename = None
+    if hasattr(heuristic, "ReplaceSession"):
+        session_rename = heuristic.ReplaceSession
+    else:
+        session_rename = None
 
     for key, val in to_rename.items():
         apply_heuristic(client, key, val, dry_run, intention_map[key],
