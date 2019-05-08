@@ -14,9 +14,11 @@ def build_intention_path(f):
     ses = fname.split("_")[1]
     return("/".join([ses, folder, fname]))
 
+def none_replace(str_input):
+    return str_input
 
 def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[],
-                    metadata_extras={}):
+                    metadata_extras={}, subj_replace=None, ses_replace=None):
     """ Apply heuristic to rename files
 
     This function applies the specified heuristic to the files given in the
@@ -32,12 +34,16 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
     suffixes = {'nifti': ".nii.gz", 'bval': ".bval", 'bvec': ".bvec"}
     ftypes = ['nifti', 'bval', 'bvec', 'tsv']
     template, outtype, annotation_classes = heur
+    subj_replace = none_replace if subj_replace is None else subj_replace
+    ses_replace = none_replace if ses_replace is None else ses_replace
 
     for acq in set(acquisition_ids):
 
         acquisition_object = client.get(acq)
-        sess_label = client.get(acquisition_object.parents.session).label
-        subj_label = client.get(acquisition_object.parents.subject).label
+        sess_label = ses_replace(
+            client.get(acquisition_object.parents.session).label)
+        subj_label = subj_replace(
+            client.get(acquisition_object.parents.subject).label)
 
         files = [f for f in acquisition_object.files if f.type in ftypes]
         bids_keys = ['sub', 'ses', 'folder', 'name']
