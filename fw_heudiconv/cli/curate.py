@@ -44,6 +44,8 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         dry_run (bool): Print the changes, don't apply them on flywheel
     """
 
+    if dry_run:
+        logger.setLevel(logging.DEBUG)
     logger.info("Querying Flywheel server...")
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
     logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id, )
@@ -68,21 +70,20 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     logger.info("Applying heuristic to query results...")
     to_rename = heuristic.infotodict(seq_infos)
 
-    if not dry_run:
-        logger.info("Applying changes to files...")
-
     intention_map = defaultdict(list)
     if hasattr(heuristic, "IntendedFor"):
-        logger.info("Updating IntendedFor fields based on heuristic file")
+        logger.info("Processing IntendedFor fields based on heuristic file")
         intention_map.update(heuristic.IntendedFor)
         logger.debug("Intention map: %s", intention_map)
 
     metadata_extras = defaultdict(list)
     if hasattr(heuristic, "MetadataExtras"):
-        logger.info("Updating Medatata fields based on heuristic file")
+        logger.info("Processing Medatata fields based on heuristic file")
         metadata_extras.update(heuristic.MetadataExtras)
         logger.debug("Metadata extras: %s", metadata_extras)
 
+    if not dry_run:
+        logger.info("Applying changes to files...")
     subject_rename = heuristic.get("ReplaceSubject")
     session_rename = heuristic.get("ReplaceSession")
 

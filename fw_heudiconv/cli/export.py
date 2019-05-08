@@ -4,74 +4,13 @@ import os
 import logging
 import warnings
 import json
-import anytree
-from anytree import Node, RenderTree, AsciiStyle
+import shutil
+from pathlib import Path
+from ..query import print_directory_tree
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-exporter')
-
-
-# def print_directory_tree(downloads_dict, folders_to_download=['anat', 'dwi', 'func', 'fmap']):
-#
-#     proj_dir = Node(downloads_dict['dataset_description'][0]['data']['Name'])
-#     # project attachments NOT YET IMPLEMENTED
-#     #project_files = [Node(f) for f in downloads_dict['project'] if get_nested(f, 'BIDS', 'Folder')]
-#     # session attachments NOT YET IMPLEMENTED
-#     #session_files = [f for f in downloads_dict['session'] if get_nested(f, 'BIDS', 'Folder')]
-#
-#     paths = [get_nested(f, 'BIDS', 'Path').split("/") for f in downloads_dict['acquisition'] if get_nested(f, 'BIDS', 'Folder') in folders_to_download]
-#     acquisition_files = [get_nested(f, 'BIDS', 'Filename') for f in downloads_dict['acquisition'] if get_nested(f, 'BIDS', 'Folder') in folders_to_download]
-#     dpaths = []
-#
-#     for x in downloads_dict['acquisition']:
-#         p = "/".join([get_nested(x, 'BIDS', 'Path'), get_nested(x, 'BIDS', 'Filename')])
-#         if "sourcedata" not in p and p != "/":
-#             dpaths.append(p)
-#
-#
-#     first_node = proj_dir
-#     for p in dpaths:
-#
-#         for i, val in enumerate(p.split("/")):
-#             print(i, val)
-#
-#     for i, x in enumerate(paths):
-#         x.append(acquisition_files[i])
-#
-#     for p in paths:
-#         for x in p:
-#
-#             if not anytree.search.find(proj_dir, lambda node: node.name == p[0]):
-#                 subject = Node(p[0], parent = proj_dir)
-#             if not anytree.search.find(proj_dir, lambda node: node.name == p[1]):
-#                 session = Node(p[1], parent = subject)
-#             if not anytree.search.find(proj_dir, lambda node: node.name == p[2]):
-#                 folder = Node(p[2], parent = session)
-#             if not anytree.search.find(proj_dir, lambda node: node.name == p[3]):
-#                 file = Node(p[3], parent = folder)
-#
-#
-#     print(RenderTree(nodes, style=AsciiStyle()).by_attr())
-
-
-def get_from_dict(dataDict, maplist):
-
-    first, rest = maplist[0], maplist[1:]
-
-    if rest:
-        # if `rest` is not empty, run the function recursively
-        return get_from_dict(dataDict[first], rest)
-    else:
-        return dataDict[first]
-
-
-def get_metadata(container, nested_key_list):
-
-    try:
-        return(get_from_dict(container, nested_key_list))
-    except:
-        return None
 
 
 def get_nested(dct, *keys):
@@ -151,7 +90,6 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     # acquistion level
     logger.info("Processing acquisition files...")
     acquisitions = [a for s in sessions for a in client.get_session_acquisitions(s.id)]
-    acquisitions_meta = [a.info for a in acquisitions]
     acquisitions2 = [client.get_acquisition(acq['_id']) for acq in acquisitions]
     acquisition_files = [f for acq in acquisitions2 for f in acq.get('files')]
     for af in acquisition_files:
@@ -167,24 +105,35 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     return to_download
 
 
-def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap']):
+def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap'], dry_run=True):
 
-    logger.info("Downloading files...")
+    if dry_run:
+        logger.info("Preparing output directory tree...")
+    else:
+        logger.info("Downloading files...")
+    root_path = "/".join([root_path, "BIDS_output"])
+    Path(root_path).mkdir()
     # handle dataset description
     if to_download['dataset_description']:
         description = to_download['dataset_description'][0]
 
         path = "/".join([root_path, description['name']])
 
-        download_sidecar(description['data'], path, remove_bids=False)
+        if dry_run:
+            Path(path).touch()
+        else:
+            download_sidecar(description['data'], path, remove_bids=False)
 
+    # write bids ignore
     if not any(x['name'] == '.bidsignore' for x in to_download['project']):
         # write bids ignore
         path = "/".join([root_path, ".bidsignore"])
         ignored_modalities = ['asl/\n', 'qsm/\n']
-
-        with open(path, 'w') as bidsignore:
-            bidsignore.writelines(ignored_modalities)
+        if dry_run:
+            Path(path).touch()
+        else:
+            with open(path, 'w') as bidsignore:
+                bidsignore.writelines(ignored_modalities)
 
     # deal with project level files
     # NOT YET IMPLEMENTED
@@ -222,10 +171,18 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
 
             if not os.path.exists(download_path):
                 os.makedirs(download_path)
-            acq.download_file(fi['name'], file_path)
-            download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
+
+            if dry_run:
+                Path(file_path).touch()
+                Path(sidecar_path).touch()
+            else:
+                acq.download_file(fi['name'], file_path)
+                download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
     logger.info("Done!")
+    if dry_run:
+        print_directory_tree(root_path)
+        shutil.rmtree(root_path)
 
 
 def get_parser():
@@ -291,11 +248,8 @@ def main():
                             session_labels=args.session,
                             subject_labels=args.subject)
 
-    if not args.dry_run:
-        download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download = args.folders)
-    else:
-        pass
-        #print_directory_tree(downloads, args.folders)
+    download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download=args.folders, dry_run=args.dry_run)
+
 
 if __name__ == '__main__':
     main()

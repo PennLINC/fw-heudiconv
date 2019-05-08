@@ -13,7 +13,7 @@ ENTRYPOINT ["/flywheel/v0/fw_heudiconv_run.py"]
 
 # Copy over python scripts that generate the BIDS hierarchy
 RUN apt-get update && apt-get install -y zip
-RUN pip install --no-cache heudiconv flywheel-sdk
+RUN pip install --no-cache heudiconv flywheel-sdk pandas
 COPY . /src
 RUN cd /src \
     && pip install . \
