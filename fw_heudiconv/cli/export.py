@@ -35,11 +35,16 @@ def check_tasks(root_path):
 
     paths = [os.path.join(x[0], y) for x in os.walk(root_path) for y in x[2]]
     paths = [x for x in paths if 'func' in x and 'rest' not in x]
+
+    if not paths:
+        logger.info("No task events in this bids dataset.")
+        return
+
     niftis = [x for x in paths if '.nii.gz' in x]
     tsvs = [x for x in paths if '.tsv' in x]
 
     if not tsvs:
-
+        logger.warning("No events.tsv found in func folder; creating empty TSVs")
         for nii in niftis:
             path = re.sub(r'(?<=_)[a-zA-Z]+\.nii\.gz', 'events.tsv', nii)
             Path(path).touch()
@@ -98,14 +103,13 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     # session level
     logger.info("Processing session files...")
     sessions = client.get_project_sessions(project_obj.id)
-    assert sessions, "No sessions found!"
 
     # filters
     if subject_labels:
         sessions = [s for s in sessions if s.subject['label'] in subject_labels]
     if session_labels:
         sessions = [s for s in sessions if s.label in session_labels]
-
+    assert sessions, "No sessions found!"
     for ses in sessions:
         for sf in ses.files:
             d = {
@@ -186,28 +190,46 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
         folder = get_nested(fi, 'BIDS', 'Folder')
         ignore = get_nested(fi, 'BIDS', 'ignore')
 
-        if project_path and folder in folders_to_download and not ignore and 'sidecar' in fi:
-            fname = get_nested(fi, 'BIDS', 'Filename')
-            extensions = ['nii.gz', 'bval', 'bvec']
-            sidecar_name = fname
-            for x in extensions:
-                sidecar_name = sidecar_name.replace(x, 'json')
+        if project_path and folder in folders_to_download and not ignore:
 
-            download_path = '/'.join([root_path, project_path])
-            file_path = '/'.join([download_path, fname])
-            sidecar_path = '/'.join([download_path, sidecar_name])
-            acq = client.get(fi['data'])
+            # only download files with sidecars
+            if 'sidecar' in fi:
+                fname = get_nested(fi, 'BIDS', 'Filename')
+                extensions = ['nii.gz', 'bval', 'bvec']
+                sidecar_name = fname
+                for x in extensions:
+                    sidecar_name = sidecar_name.replace(x, 'json')
 
-            if not os.path.exists(download_path):
-                os.makedirs(download_path)
+                download_path = '/'.join([root_path, project_path])
+                file_path = '/'.join([download_path, fname])
+                sidecar_path = '/'.join([download_path, sidecar_name])
+                acq = client.get(fi['data'])
 
-            if dry_run:
-                Path(file_path).touch()
-                Path(sidecar_path).touch()
-            else:
-                acq.download_file(fi['name'], file_path)
-                download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
+                if not os.path.exists(download_path):
+                    os.makedirs(download_path)
 
+                if dry_run:
+                    Path(file_path).touch()
+                    Path(sidecar_path).touch()
+                else:
+                    acq.download_file(fi['name'], file_path)
+                    download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
+
+            #exception: it may be an events tsv
+            elif 'tsv' in fi['name']:
+                fname = get_nested(fi, 'BIDS', 'Filename')
+                download_path = '/'.join([root_path, project_path])
+                file_path = '/'.join([download_path, fname])
+                acq = client.get(fi['data'])
+
+                if not os.path.exists(download_path):
+                    os.makedirs(download_path)
+
+                if dry_run:
+                    Path(file_path).touch()
+                    Path(sidecar_path).touch()
+                else:
+                    acq.download_file(fi['name'], file_path)
     check_tasks(root_path)
 
     logger.info("Done!")
