@@ -5,6 +5,7 @@ import logging
 import warnings
 import json
 import shutil
+import re
 from pathlib import Path
 from ..query import print_directory_tree
 
@@ -29,6 +30,31 @@ def download_sidecar(d, fpath, remove_bids=True):
 
     with open(fpath, 'w') as sidecar:
         json.dump(d, fp=sidecar, sort_keys=True, indent=4)
+
+def check_tasks(root_path):
+
+    paths = [os.path.join(x[0], y) for x in os.walk(root_path) for y in x[2]]
+    paths = [x for x in paths if 'func' in x and 'rest' not in x]
+    niftis = [x for x in paths if '.nii.gz' in x]
+    tsvs = [x for x in paths if '.tsv' in x]
+
+    if not tsvs:
+
+        for nii in niftis:
+            path = re.sub(r'(?<=_)[a-zA-Z]+\.nii\.gz', 'events.tsv', nii)
+            Path(path).touch()
+    else:
+        for nii in niftis:
+            shortened = re.sub(r'(?<=_)[a-zA-Z]+\.nii\.gz', '', nii)
+            has_matching_tsv = False
+            for t in tsvs:
+                if shortened in t:
+                    has_matching_tsv = True
+                    continue
+            if not has_matching_tsv:
+                logger.warning("No events.tsv found for {}; creating empty TSV".format(shortened))
+                path = shortened + 'events.tsv'
+                Path(path).touch()
 
 
 def gather_bids(client, project_label, subject_labels=None, session_labels=None):
@@ -178,6 +204,8 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
             else:
                 acq.download_file(fi['name'], file_path)
                 download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
+
+    check_tasks(root_path)
 
     logger.info("Done!")
     print_directory_tree(root_path)
