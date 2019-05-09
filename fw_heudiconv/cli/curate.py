@@ -3,7 +3,7 @@ import warnings
 import flywheel
 from collections import defaultdict
 from ..convert import apply_heuristic
-from ..query import get_sessions, get_seq_info
+from ..query import get_seq_info
 from heudiconv import utils
 import logging
 
@@ -48,13 +48,16 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         logger.setLevel(logging.DEBUG)
     logger.info("Querying Flywheel server...")
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
-    logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id, )
+    assert project_obj, "Project not found! Maybe check spelling...?"
+    logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id)
     sessions = client.get_project_sessions(project_obj.id)
     # filters
     if subject_labels:
         sessions = [s for s in sessions if s.subject['label'] in subject_labels]
     if session_labels:
         sessions = [s for s in sessions if s.label in session_labels]
+
+    assert sessions, "No sessions found!"
     logger.debug('Found sessions:\n\t%s',
                  "\n\t".join(['%s (%s)' % (ses['label'], ses.id) for ses in sessions]))
 
@@ -84,8 +87,15 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
 
     if not dry_run:
         logger.info("Applying changes to files...")
-    subject_rename = heuristic.get("ReplaceSubject")
-    session_rename = heuristic.get("ReplaceSession")
+
+    if hasattr(heuristic, "ReplaceSubject"):
+        subject_rename = heuristic.ReplaceSubject
+    else:
+        subject_rename = None
+    if hasattr(heuristic, "ReplaceSession"):
+        session_rename = heuristic.ReplaceSession
+    else:
+        session_rename = None
 
     for key, val in to_rename.items():
         apply_heuristic(client, key, val, dry_run, intention_map[key],

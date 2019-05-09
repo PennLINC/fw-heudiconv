@@ -76,6 +76,8 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
 
     # dataset description
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
+    assert project_obj, "Project not found! Maybe check spelling...?"
+
     # get dataset description file
     to_download['dataset_description'].append({
         'name': 'dataset_description.json',
@@ -96,6 +98,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     # session level
     logger.info("Processing session files...")
     sessions = client.get_project_sessions(project_obj.id)
+    assert sessions, "No sessions found!"
 
     # filters
     if subject_labels:

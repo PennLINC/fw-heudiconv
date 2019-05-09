@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="fw_heudiconv",
-    version="0.0.6",
+    version="0.0.7",
     author="Tinashe M. Tapera, Matt Cieslak, Harsha Kethineni",
     author_email="tinashemtapera@gmail.com",
     description="Use heudiconv heuristics for BIDS curation on flywheel",
@@ -15,6 +15,11 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/PennBBL/fw_heudiconv",
     packages=setuptools.find_packages(),
+    install_requires=[
+        "flywheel-sdk",
+        "heudiconv",
+        "pandas"
+    ],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
