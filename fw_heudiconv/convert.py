@@ -2,6 +2,7 @@ import os
 import ast
 import json
 import logging
+import re
 import operator
 
 logger = logging.getLogger('fwHeuDiConv-curator')
@@ -67,6 +68,9 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
                                          bids_dict['folder']])
             new_bids['error_message'] = ""
             new_bids['valid'] = True
+
+            infer_params_from_filename(new_bids)
+
             destination = "\n" + f.name + "\n\t" + new_bids['Filename'] + " -> " + new_bids["Path"] + "/" + new_bids['Filename']
             logger.debug(destination)
 
@@ -198,3 +202,15 @@ def add_empty_bids_fields(folder, fname=None):
                     "valid": False}
 
     return(new_bids)
+
+def infer_params_from_filename(bdict):
+
+    fname = bdict['Filename']
+
+    params = ['Acq', 'Ce', 'Dir', 'Echo', 'Mod', 'Rec', 'Run', 'Task']
+    to_fill = {}
+    for x in params:
+        search = re.search(r'(?<={}-)[A-Za-z0-9]+(?=_)'.format(x.lower()), fname)
+        to_fill[x] = search.group() if search is not None else ""
+
+    bdict.update(to_fill)
