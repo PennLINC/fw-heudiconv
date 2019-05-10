@@ -25,7 +25,7 @@ If running on Flywheel:
 
 `fw-heudiconv-tabulate` to list the sequence information for your dataset
 
-Use the flag --dry_run to test your heuristic.
+Use the flag `--dry_run=True` to test your heuristic.
 
 ---
 # Overview
