@@ -1,14 +1,31 @@
 # Heudiconv-Style BIDS curation for Flywheel
 
-1. Make sure you have the [Flywheel CLI](https://docs.flywheel.io/hc/en-us/articles/360008162214-Installing-the-Command-Line-Interface-CLI-) and [SDK](https://pypi.org/project/flywheel-sdk/) installed. Note that this is flywheel-sdk and NOT flywheel.
+If running as a CLI:
+
+1. Make sure you have the [Flywheel CLI](https://docs.flywheel.io/hc/en-us/articles/360008162214-Installing-the-Command-Line-Interface-CLI-) and [SDK](https://pypi.org/project/flywheel-sdk/) installed. Note that this is `flywheel-sdk` and NOT `flywheel`.
 
 2. Download the package from pip
 
-`pip install fw_heudiconv`
+`pip install fw-heudiconv`
 
 OR
 
 [Clone or download this repository](https://github.com/PennBBL/fw-heudiconv) to your machine.
+
+If running on Flywheel:
+1. Install the `fw-heudiconv` gear.
+
+2. Design your heuristic file
+
+3. Run `fw-heudiconv`
+
+`fw-heudiconv-curate` to curate the dataset into BIDS
+
+`fw-heudiconv-export` to export the dataset to your machine
+
+`fw-heudiconv-tabulate` to list the sequence information for your dataset
+
+Use the flag `--dry_run=True` to test your heuristic.
 
 ---
 # Overview
