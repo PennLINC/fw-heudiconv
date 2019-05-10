@@ -20,7 +20,9 @@ If running on Flywheel:
 3. Run `fw-heudiconv`
 
 `fw-heudiconv-curate` to curate the dataset into BIDS
+
 `fw-heudiconv-export` to export the dataset to your machine
+
 `fw-heudiconv-tabulate` to list the sequence information for your dataset
 
 Use the flag --dry_run to test your heuristic.
