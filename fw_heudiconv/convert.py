@@ -97,9 +97,6 @@ def add_empty_bids_fields(folder, fname=None):
             print("No filename given, can't set intentions for this fieldmap!")
             IntendedFor = ""
             Modality = ""
-        elif "epi" in fname:
-            IntendedFor = "[{'Folder': 'dwi'}]"
-            Modality = "epi"
         else:
             IntendedFor = "[{'Folder': 'func'}]"
             Modality = "fieldmap"
@@ -111,9 +108,9 @@ def add_empty_bids_fields(folder, fname=None):
                     "Filename": "",
                     "Folder": "fmap",
                     "ignore": "",
-                    "IntendedFor": IntendedFor,
+                    "IntendedFor": "",
                     "Mod": "",
-                    "Modality": Modality,
+                    "Modality": "",
                     "Path": "",
                     "Rec": "",
                     "Run": "",
@@ -189,7 +186,7 @@ def add_empty_bids_fields(folder, fname=None):
                     "Echo": "",
                     "error_message": "",
                     "Filename": "",
-                    "Folder": "",
+                    "Folder": folder,
                     "ignore": "",
                     "IntendedFor": "",
                     "Mod": "",
