@@ -6,6 +6,7 @@ import warnings
 import json
 import shutil
 import re
+import csv
 from pathlib import Path
 from ..query import print_directory_tree
 
@@ -26,6 +27,9 @@ def get_nested(dct, *keys):
 def download_sidecar(d, fpath, remove_bids=True):
 
     if remove_bids and 'BIDS' in d:
+        if 'Task' in d['BIDS']:
+            if d['BIDS']['Task'] != "":
+                d['TaskName'] = d['BIDS']['Task']
         del d['BIDS']
 
     with open(fpath, 'w') as sidecar:
@@ -47,7 +51,10 @@ def check_tasks(root_path):
         logger.warning("No events.tsv found in func folder; creating empty TSVs")
         for nii in niftis:
             path = re.sub(r'(?<=_)[a-zA-Z]+\.nii\.gz', 'events.tsv', nii)
-            Path(path).touch()
+            with open(str(path), "wt") as f:
+                tsv_writer = csv.writer(f, delimiter='\t')
+                tsv_writer.writerow(['onset', 'duration'])
+
     else:
         for nii in niftis:
             shortened = re.sub(r'(?<=_)[a-zA-Z]+\.nii\.gz', '', nii)
@@ -59,7 +66,10 @@ def check_tasks(root_path):
             if not has_matching_tsv:
                 logger.warning("No events.tsv found for {}; creating empty TSV".format(shortened))
                 path = shortened + 'events.tsv'
-                Path(path).touch()
+                with open(str(path), "wt") as f:
+                    tsv_writer = csv.writer(f, delimiter='\t')
+                    tsv_writer.writerow(['onset', 'duration'])
+
 
 
 def gather_bids(client, project_label, subject_labels=None, session_labels=None):
