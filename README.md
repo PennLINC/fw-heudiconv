@@ -23,7 +23,7 @@ To run on Flywheel:
 
 To curate the dataset into BIDS: In the "Gear Configuration" window, type "Curate" in the "Action" field, which will curate the dataset for BIDS. Click the "dry run" button to test your heuristic first (the gear log will print out all the changes without applying them).
 
-To export the dataset into BIDS: In the "Gear Configuration" window, type "Export" in the "Action" field, which will leave an exported BIDS dataset in the gear's outputs. Click the "dry run" button to test your output first (the gear log will print out the expected directory structure of an export).
+To export the dataset into BIDS for downloading to your machine: In the "Gear Configuration" window, type "Export" in the "Action" field, which will leave an exported BIDS dataset in the gear's outputs. Click the "dry run" button to test your output first (the gear log will print out the expected directory structure of an export).
 
 To list the sequence information for your dataset: In the "Gear Configuration" window, type "Tabulate" in the "Action" field, which will leave a sequence info table (.tsv) in the gear's outputs.
 
