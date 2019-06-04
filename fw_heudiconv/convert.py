@@ -3,6 +3,8 @@ import ast
 import json
 import logging
 import operator
+import re
+from cli.export import get_nested
 
 logger = logging.getLogger('fwHeuDiConv-curator')
 
@@ -198,3 +200,40 @@ def add_empty_bids_fields(folder, fname=None):
                     "valid": False}
 
     return(new_bids)
+
+
+def infer_params_from_filename(bdict):
+
+    fname = bdict['Filename']
+
+    params = ['Acq', 'Ce', 'Dir', 'Echo', 'Mod', 'Rec', 'Run', 'Task']
+    to_fill = {}
+    for x in params:
+        search = re.search(r'(?<={}-)[A-Za-z0-9]+(?=_)'.format(x.lower()), fname)
+        to_fill[x] = search.group() if search is not None else ""
+
+    bdict.update(to_fill)
+
+def confirm_intentions(client, session):
+
+    try:
+        ses_lab = session.label
+        sub_lab = session.subject.label
+        acqs = [client.get(s.id) for s in session.acquisitions()]
+        acq_files = [f for a in acqs for f in a.files if '.nii' in f.name]
+        bids_filenames = [get_nested(f, 'info', 'BIDS', 'Filename') for f in acq_files]
+        bids_folders = [get_nested(f, 'info', 'BIDS', 'Folder') for f in acq_files]
+        l = list(zip(bids_folders, bids_filenames))
+        full_filenames = ["/".join(x) for x in l]
+        paths = ["ses-" + ses_lab + "/" + x for x in full_filenames]
+
+        for a in acqs:
+            for x in a.files:
+                intendeds = get_nested(x.to_dict(), 'info', 'IntendedFor')
+                if intendeds:
+                    if not all([i in paths for i in intendeds]):
+                        exists = [i for i in intendeds if i in paths]
+                        a.update_file_info(x.name, {'IntendedFor': exists})
+    except Exception as e:
+        logger.debug("Trouble updating intentions for this session %s", session.label)
+        print(e)

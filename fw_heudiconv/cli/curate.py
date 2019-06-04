@@ -2,7 +2,7 @@ import argparse
 import warnings
 import flywheel
 from collections import defaultdict
-from ..convert import apply_heuristic
+from ..convert import apply_heuristic, confirm_intentions
 from ..query import get_seq_info
 from heudiconv import utils
 import logging
@@ -101,6 +101,8 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         apply_heuristic(client, key, val, dry_run, intention_map[key],
                         metadata_extras[key], subject_rename, session_rename)
 
+    for ses in sessions:
+        confirm_intentions(ses)
 
 def get_parser():
 
