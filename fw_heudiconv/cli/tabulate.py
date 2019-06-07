@@ -11,7 +11,7 @@ logger = logging.getLogger('fw-heudiconv-tabulator')
 
 
 def tabulate_bids(client, project_label, path=".", subject_labels=None,
-                  session_labels=None, dry_run=False):
+                  session_labels=None, dry_run=False, unique=True):
     """Writes out a tabular form of the Seq Info objects
 
     Args:
@@ -44,7 +44,8 @@ def tabulate_bids(client, project_label, path=".", subject_labels=None,
     seq_infos = get_seq_info(client, project_label, sessions)
     seq_info_dicts = [seq._asdict() for seq in seq_infos]
     df = pd.DataFrame.from_dict(seq_info_dicts)
-    df = df.drop_duplicates(subset=['TR', 'TE', 'protocol_name', 'is_motion_corrected', 'is_derived'])
+    if unique:
+        df = df.drop_duplicates(subset=['TR', 'TE', 'protocol_name', 'is_motion_corrected', 'is_derived'])
     if dry_run:
         print(df)
     else:
@@ -94,6 +95,11 @@ def get_parser():
         action='store_true',
         default=False
     )
+    parser.add_argument(
+        "--unique",
+        help="Strip down to unique sequence combinations",
+        default=True
+    )
 
     return parser
 
@@ -116,7 +122,8 @@ def main():
                   path=args.path,
                   session_labels=args.session,
                   subject_labels=args.subject,
-                  dry_run=args.dry_run)
+                  dry_run=args.dry_run,
+                  unique=args.unique)
 
 
 if __name__ == '__main__':
