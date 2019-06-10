@@ -46,7 +46,7 @@
 	"custom": {
 		"gear-builder": {
 			"category": "analysis",
-			"image": "pennbbl/fw-heudiconv:0.1.11_0.1.0"
+			"image": "pennbbl/fw-heudiconv:latest"
 		},
 		"flywheel":{"suite": "PennBBL"}
 	}
