@@ -19,7 +19,7 @@ def get_nested(dct, *keys):
     for key in keys:
         try:
             dct = dct[key]
-        except KeyError:
+        except (KeyError, TypeError):
             return None
     return dct
 

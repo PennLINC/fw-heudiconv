@@ -2,7 +2,7 @@ import argparse
 import warnings
 import flywheel
 from collections import defaultdict
-from ..convert import apply_heuristic
+from ..convert import apply_heuristic, confirm_intentions
 from ..query import get_seq_info
 from heudiconv import utils
 import logging
@@ -88,19 +88,22 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     if not dry_run:
         logger.info("Applying changes to files...")
 
-    if hasattr(heuristic, "ReplaceSubject"):
-        subject_rename = heuristic.ReplaceSubject
-    else:
-        subject_rename = None
-    if hasattr(heuristic, "ReplaceSession"):
-        session_rename = heuristic.ReplaceSession
-    else:
-        session_rename = None
+        if hasattr(heuristic, "ReplaceSubject"):
+            subject_rename = heuristic.ReplaceSubject
+        else:
+            subject_rename = None
+        if hasattr(heuristic, "ReplaceSession"):
+            session_rename = heuristic.ReplaceSession
+        else:
+            session_rename = None
 
-    for key, val in to_rename.items():
-        apply_heuristic(client, key, val, dry_run, intention_map[key],
-                        metadata_extras[key], subject_rename, session_rename)
+        for key, val in to_rename.items():
+            apply_heuristic(client, key, val, dry_run, intention_map[key],
+                            metadata_extras[key], subject_rename, session_rename)
 
+    if not dry_run:
+        for ses in sessions:
+            confirm_intentions(client, ses)
 
 def get_parser():
 
