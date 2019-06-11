@@ -1,3 +1,6 @@
+import os
+import sys
+import importlib
 import argparse
 import warnings
 import flywheel
@@ -5,6 +8,7 @@ from collections import defaultdict
 from ..convert import apply_heuristic, confirm_intentions
 from ..query import get_seq_info
 from heudiconv import utils
+from heudiconv import heuristics
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -68,10 +72,22 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         "\n\t".join([pretty_string_seqinfo(seq) for seq in seq_infos]))
 
     logger.info("Loading heuristic file...")
-    heuristic = utils.load_heuristic(heuristic_path)
+    try:
+        if os.path.isfile(heuristic_path):
+            heuristic = utils.load_heuristic(heuristic_path)
+        else:
+            heuristic = importlib.import_module('heudiconv.heuristics.{}'.format(heuristic_path))
+    except ModuleNotFoundError as e:
+        logger.error("Couldn't load the specified heuristic file!")
+        logger.error(e)
+        sys.exit(1)
 
     logger.info("Applying heuristic to query results...")
     to_rename = heuristic.infotodict(seq_infos)
+
+    if not to_rename:
+        logger.debug("No changes to apply!")
+        sys.exit(1)
 
     intention_map = defaultdict(list)
     if hasattr(heuristic, "IntendedFor"):
