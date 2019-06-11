@@ -218,8 +218,6 @@ def infer_params_from_filename(bdict):
 def confirm_intentions(client, session):
 
     try:
-        ses_lab = session.label
-        sub_lab = session.subject.label
         acqs = [client.get(s.id) for s in session.acquisitions()]
         acq_files = [f for a in acqs for f in a.files if '.nii' in f.name]
         bids_filenames = [get_nested(f, 'info', 'BIDS', 'Filename') for f in acq_files]
@@ -231,7 +229,9 @@ def confirm_intentions(client, session):
                 full_filenames.append(None)
             else:
                 full_filenames.append("/".join(x))
-        paths = ["ses-" + ses_lab + "/" + x for x in full_filenames if x is not None]
+        ses_labs = [re.search(r"ses-[a-zA-z0-9]+(?=_)", x).group() for x in full_filenames if x is not None]
+        l2 = list(zip(ses_labs, full_filenames))
+        paths = ["/".join(x) for x in l2 if x is not None]
 
         for a in acqs:
             for x in a.files:
@@ -239,7 +239,6 @@ def confirm_intentions(client, session):
                     intendeds = get_nested(x.to_dict(), 'info', 'IntendedFor')
                     if intendeds:
                         intendeds = [re.sub("sub-[a-zA-z0-9]+\/", "", i) for i in intendeds]
-                        intendeds = [i + ".nii.gz" for i in intendeds]
                         if not all([i in paths for i in intendeds]):
                             logger.info("Ensuring all intentions apply for acquisition %s: %s", a.label, x.name)
                             exists = [i for i in intendeds if i in paths]
