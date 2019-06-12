@@ -12,7 +12,8 @@ COPY manifest.json ${FLYWHEEL}/manifest.json
 ENTRYPOINT ["/flywheel/v0/fw_heudiconv_run.py"]
 
 # Copy over python scripts that generate the BIDS hierarchy
-RUN apt-get update && apt-get install -y zip
+RUN apt-get -y update
+RUN apt-get install -y zip
 RUN pip install --no-cache heudiconv flywheel-sdk pandas
 COPY . /src
 RUN cd /src \
