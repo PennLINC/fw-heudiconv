@@ -19,20 +19,20 @@ config = invocation['config']
 inputs = invocation['inputs']
 destination = invocation['destination']
 
-fw = flywheel.Flywheel(inputs['api_key']['key'])
+fw = flywheel.Flywheel(inputs['api-key']['key'])
 user = fw.get_current_user()
 
 # start up logic:
-# try get heuristic from the file; if not present, check for default heuristic
-heuristic = export.get_nested(inputs, 'heuristic', 'location', 'path')
-if heuristic is None:
-    heuristic = config['default_heuristic']
-
 analysis_container = fw.get(destination['id'])
 project_container = fw.get(analysis_container.parents['project'])
 project_label = project_container.label
 dry_run = config['dry_run']
 action = config['action']
+
+# try get heuristic from the file; if not present, check for default heuristic
+heuristic = export.get_nested(inputs, 'heuristic', 'location', 'path')
+if heuristic is None:
+    heuristic = export.get_nested(config, 'default_heuristic')
 
 if not bool(heuristic) and action == "Curate":
     logger.error("You must either supply a heuristic file in the input tab, or type in the correct name of default heuristic from the HeuDiConv module in the config tab. See https://github.com/nipy/heudiconv/tree/master/heudiconv/heuristics.")
