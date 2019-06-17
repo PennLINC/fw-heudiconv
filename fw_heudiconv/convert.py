@@ -5,6 +5,7 @@ import logging
 import re
 import operator
 import re
+import traceback
 from .cli.export import get_nested
 
 logger = logging.getLogger('fwHeuDiConv-curator')
@@ -226,19 +227,21 @@ def confirm_intentions(client, session):
         full_filenames = []
         for x in l:
             if None in x:
-                full_filenames.append(None)
+                pass
             else:
                 full_filenames.append("/".join(x))
         ses_labs = [re.search(r"ses-[a-zA-z0-9]+(?=_)", x).group() for x in full_filenames if x is not None]
         l2 = list(zip(ses_labs, full_filenames))
-        paths = ["/".join(x) for x in l2 if x is not None]
+        paths = []
+        for x in l2:
+            if not(None in x):
+                paths.append("/".join(x))
 
         for a in acqs:
             for x in a.files:
                 if 'nifti' in x.type:
                     intendeds = get_nested(x.to_dict(), 'info', 'IntendedFor')
                     if intendeds:
-                        intendeds = [re.sub("sub-[a-zA-z0-9]+\/", "", i) for i in intendeds]
                         if not all([i in paths for i in intendeds]):
                             logger.info("Ensuring all intentions apply for acquisition %s: %s", a.label, x.name)
                             exists = [i for i in intendeds if i in paths]
@@ -247,3 +250,4 @@ def confirm_intentions(client, session):
     except Exception as e:
         logger.warning("Trouble updating intentions for this session %s", session.label)
         print(e)
+        traceback.print_exc()
