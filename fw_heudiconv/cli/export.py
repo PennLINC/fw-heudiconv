@@ -143,6 +143,8 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
             'BIDS': get_nested(af, 'info', 'BIDS'),
             'sidecar': get_nested(af, 'info')
         }
+        if any(x in d['name'] for x in ['bval', 'bvec']):
+            del d['sidecar']
         if d['BIDS'] and d['BIDS'] != "NA":
             to_download['acquisition'].append(d)
     return to_download
