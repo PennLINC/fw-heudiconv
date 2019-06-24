@@ -143,6 +143,8 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
             'BIDS': get_nested(af, 'info', 'BIDS'),
             'sidecar': get_nested(af, 'info')
         }
+        if any(x in d['name'] for x in ['bval', 'bvec']):
+            del d['sidecar']
         if d['BIDS'] and d['BIDS'] != "NA":
             to_download['acquisition'].append(d)
     return to_download
@@ -226,7 +228,7 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
                     download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
             #exception: it may be an events tsv
-            elif 'tsv' in fi['name']:
+            elif any(x in fi['name'] for x in ['bval', 'bvec', 'tsv']):
                 fname = get_nested(fi, 'BIDS', 'Filename')
                 download_path = '/'.join([root_path, project_path])
                 file_path = '/'.join([download_path, fname])
