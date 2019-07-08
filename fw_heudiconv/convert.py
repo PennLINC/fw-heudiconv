@@ -21,8 +21,8 @@ def build_intention_path(f):
 def none_replace(str_input):
     return str_input
 
-def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[],
-                    metadata_extras={}, subj_replace=None, ses_replace=None):
+def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[],
+                    metadata_extras={}, subj_replace=None, ses_replace=None, item_num=1):
     """ Apply heuristic to rename files
 
     This function applies the specified heuristic to the files given in the
@@ -41,56 +41,54 @@ def apply_heuristic(client, heur, acquisition_ids, dry_run=False, intended_for=[
     subj_replace = none_replace if subj_replace is None else subj_replace
     ses_replace = none_replace if ses_replace is None else ses_replace
 
-    for acq in set(acquisition_ids):
+    acquisition_object = client.get(acquisition_id)
+    sess_label = ses_replace(
+        client.get(acquisition_object.parents.session).label)
+    subj_label = subj_replace(
+        client.get(acquisition_object.parents.subject).label)
 
-        acquisition_object = client.get(acq)
-        sess_label = ses_replace(
-            client.get(acquisition_object.parents.session).label)
-        subj_label = subj_replace(
-            client.get(acquisition_object.parents.subject).label)
+    files = [f for f in acquisition_object.files if f.type in ftypes]
+    bids_keys = ['sub', 'ses', 'folder', 'name']
+    ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
 
-        files = [f for f in acquisition_object.files if f.type in ftypes]
-        bids_keys = ['sub', 'ses', 'folder', 'name']
-        ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
+    files.sort(key=operator.itemgetter("name"))
+    for fnum, f in enumerate(files):
+        bids_vals = template.format(subject=subj_label, session=ses_fmt, item=fnum+1, seqitem=item_num).split("/")
+        bids_dict = dict(zip(bids_keys, bids_vals))
+        suffix = suffixes[f.type]
 
-        files.sort(key=operator.itemgetter("name"))
-        for fnum, f in enumerate(files):
-            bids_vals = template.format(subject=subj_label, session=ses_fmt, item=fnum+1).split("/")
-            bids_dict = dict(zip(bids_keys, bids_vals))
-            suffix = suffixes[f.type]
+        if 'BIDS' not in f.info:
+            f.info['BIDS'] = ""
+        new_bids = f.info['BIDS']
+        if new_bids in ("NA", ""):
+            new_bids = add_empty_bids_fields(bids_dict['folder'], bids_dict['name'])
+        new_bids['Filename'] = bids_dict['name']+suffix
+        new_bids['Folder'] = bids_dict['folder']
+        new_bids['Path'] = "/".join([bids_dict['sub'],
+                                     bids_dict['ses'],
+                                     bids_dict['folder']])
+        new_bids['error_message'] = ""
+        new_bids['valid'] = True
 
-            if 'BIDS' not in f.info:
-                f.info['BIDS'] = ""
-            new_bids = f.info['BIDS']
-            if new_bids in ("NA", ""):
-                new_bids = add_empty_bids_fields(bids_dict['folder'], bids_dict['name'])
-            new_bids['Filename'] = bids_dict['name']+suffix
-            new_bids['Folder'] = bids_dict['folder']
-            new_bids['Path'] = "/".join([bids_dict['sub'],
-                                         bids_dict['ses'],
-                                         bids_dict['folder']])
-            new_bids['error_message'] = ""
-            new_bids['valid'] = True
+        infer_params_from_filename(new_bids)
 
-            infer_params_from_filename(new_bids)
+        destination = "\n" + f.name + "\n\t" + new_bids['Filename'] + " -> " + new_bids["Path"] + "/" + new_bids['Filename']
+        logger.debug(destination)
 
-            destination = "\n" + f.name + "\n\t" + new_bids['Filename'] + " -> " + new_bids["Path"] + "/" + new_bids['Filename']
-            logger.debug(destination)
+        if not dry_run:
+            acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
 
+        if intended_for and (f.name.endswith(".nii.gz") or f.name.endswith(".nii")):
+            intendeds = [intend.format(subject=subj_label, session=ses_fmt)
+                         for intend in intended_for]
+            logger.debug("%s IntendedFor: %s", new_bids['Filename'], intendeds)
             if not dry_run:
-                acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
+                acquisition_object.update_file_info(f.name, {'IntendedFor': intendeds})
 
-            if intended_for and (f.name.endswith(".nii.gz") or f.name.endswith(".nii")):
-                intendeds = [intend.format(subject=subj_label, session=ses_fmt)
-                             for intend in intended_for]
-                logger.debug("%s IntendedFor: %s", new_bids['Filename'], intendeds)
-                if not dry_run:
-                    acquisition_object.update_file_info(f.name, {'IntendedFor': intendeds})
-
-            if metadata_extras:
-                logger.debug("%s metadata: %s", f.name, metadata_extras)
-                if not dry_run:
-                    acquisition_object.update_file_info(f.name, metadata_extras)
+        if metadata_extras:
+            logger.debug("%s metadata: %s", f.name, metadata_extras)
+            if not dry_run:
+                acquisition_object.update_file_info(f.name, metadata_extras)
 
 
 def add_empty_bids_fields(folder, fname=None):

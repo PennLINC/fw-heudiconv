@@ -114,8 +114,13 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         session_rename = None
 
     for key, val in to_rename.items():
-        apply_heuristic(client, key, val, dry_run, intention_map[key],
-                        metadata_extras[key], subject_rename, session_rename)
+
+        # assert val is list
+        if not isinstance(val, set):
+                val = set(val)
+        for seqitem, value in enumerate(val):
+            apply_heuristic(client, key, value, dry_run, intention_map[key],
+                            metadata_extras[key], subject_rename, session_rename, seqitem+1)
 
     if not dry_run:
         for ses in sessions:
