@@ -10,16 +10,26 @@ CONVERTABLE_TYPES = ("bvec", "bval", "nifti")
 log = logging.getLogger(__name__)
 
 
-def acquisition_to_heudiconv(acq, context):
+def acquisition_to_heudiconv(client, acq, context):
     """Create a list of sequence objects for all convertable files in the acquistion."""
     to_convert = []
     # Get the nifti file
     dicoms = [f for f in acq.files if f.type == 'dicom']
     if dicoms:
         dicom = dicoms[0]
-        zip_info = acq.get_file_zip_info(dicom.name)
-        context['total'] += len(zip_info.members)
-        dcm_info = dicom.info
+        try:
+            zip_info = acq.get_file_zip_info(dicom.name)
+            context['total'] += len(zip_info.members)
+            dcm_info = dicom.info
+
+        except:
+            except_subj = client.get(acq.parents.subject)
+            except_sess = client.get(acq.parents.session)
+
+            log.debug('Dicom could not be processed:\n\t%s\n\tSubject Label: %s\n\tSession Label: %s'.format(dicom.name, except_subj.label, except_sess.label))
+            zip_info = None
+            dcm_info = {}
+
     else:
         zip_info = None
         dcm_info = {}
@@ -97,7 +107,7 @@ def session_to_seq_info(client, session, context):
         acquisition = client.get(acquisition.id)
         context['acquisition'] = acquisition
 
-        for info in acquisition_to_heudiconv(acquisition, context):
+        for info in acquisition_to_heudiconv(client, acquisition, context):
             log.debug('info: %s', info)
             seq_info[info] = {}  # This would be set to a list of filepaths in heudiconv
     log.debug('session=%s', session.label)
