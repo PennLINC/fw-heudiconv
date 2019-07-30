@@ -95,7 +95,7 @@ def add_empty_bids_fields(folder, fname=None):
 
     if "fmap" in folder:
         if not fname:
-            print("No filename given, can't set intentions for this fieldmap!")
+            logger.debug("No filename given, can't set intentions for this fieldmap!")
             IntendedFor = ""
             Modality = ""
         else:
@@ -237,11 +237,11 @@ def confirm_intentions(client, session):
 
         for a in acqs:
             for x in a.files:
-                if 'nifti' in x.type:
+                if x.type == 'nifti':
                     intendeds = get_nested(x.to_dict(), 'info', 'IntendedFor')
                     if intendeds:
                         if not all([i in paths for i in intendeds]):
-                            logger.info("Ensuring all intentions apply for acquisition %s: %s", a.label, x.name)
+                            logger.debug("Ensuring all intentions apply for acquisition %s: %s", a.label, x.name)
                             exists = [i for i in intendeds if i in paths]
                             a.update_file_info(x.name, {'IntendedFor': exists})
 
@@ -249,3 +249,30 @@ def confirm_intentions(client, session):
         logger.warning("Trouble updating intentions for this session %s", session.label)
         print(e)
         traceback.print_exc()
+
+def confirm_bids_namespace(project_obj, dry_run):
+
+    if get_nested(project_obj, 'info', 'BIDS') is None:
+
+        logger.debug("{} has no BIDS namespace!".format(project_obj.label))
+
+        if not dry_run:
+
+            logger.debug("Adding default BIDS namespace...")
+
+            bids = { 'BIDS': {'Acknowledgements': '',
+                'Authors': [],
+                'BIDSVersion': '1.0.2',
+                'DatasetDOI': '',
+                'Funding': '',
+                'HowToAcknowledge': '',
+                'License': '',
+                'Name': project_obj.label,
+                'ReferencesAndLinks': [],
+                'template': 'project'}
+            }
+
+            project_obj.update_info(bids)
+            project_obj = project_obj.reload()
+
+    return project_obj

@@ -5,7 +5,7 @@ import argparse
 import warnings
 import flywheel
 from collections import defaultdict
-from ..convert import apply_heuristic, confirm_intentions
+from ..convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
 from ..query import get_seq_info
 from heudiconv import utils
 from heudiconv import heuristics
@@ -54,6 +54,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
     assert project_obj, "Project not found! Maybe check spelling...?"
     logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id)
+    project_obj = confirm_bids_namespace(project_obj, dry_run)
     sessions = client.get_project_sessions(project_obj.id)
     # filters
     if subject_labels:

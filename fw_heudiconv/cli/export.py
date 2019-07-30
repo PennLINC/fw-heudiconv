@@ -284,8 +284,7 @@ def get_parser():
         "--folders",
         help="The BIDS folders to download",
         nargs="+",
-        default=['anat', 'dwi', 'fmap', 'func'],
-        type=list
+        default=['anat', 'dwi', 'fmap', 'func']
     )
     parser.add_argument(
         "--dry_run",
