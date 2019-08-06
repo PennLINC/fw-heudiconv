@@ -306,7 +306,10 @@ def main():
 
     args = parser.parse_args()
     project_label = ' '.join(args.project)
-    assert os.path.exists(args.path), "Path does not exist!"
+    if not os.path.exists(args.path):
+        logger.info("Creating target directory...")
+        os.makedirs(args.path)
+    #assert os.path.exists(args.path), "Path does not exist!"
     downloads = gather_bids(client=fw,
                             project_label=project_label,
                             session_labels=args.session,

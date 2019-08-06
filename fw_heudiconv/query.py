@@ -81,7 +81,7 @@ def acquisition_to_heudiconv(client, acq, context):
             info.get("AccessionNumber"),
             info.get("PatientAge"),
             info.get("PatientSex"),
-            info.get("AcquisitionDate"),
+            info.get("AcquisitionDateTime"),
             info.get("SeriesInstanceUID")
         ))
         # We could possible add a context field which would contain flywheel
