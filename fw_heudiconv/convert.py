@@ -243,6 +243,8 @@ def confirm_intentions(client, session):
                         if not all([i in paths for i in intendeds]):
                             logger.debug("Ensuring all intentions apply for acquisition %s: %s", a.label, x.name)
                             exists = [i for i in intendeds if i in paths]
+                            missing = [i for i in intendeds if i not in paths]
+                            logger.debug("Missing paths: %s" % missing)
                             a.update_file_info(x.name, {'IntendedFor': exists})
 
     except Exception as e:
