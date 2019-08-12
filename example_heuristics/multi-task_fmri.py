@@ -1,13 +1,5 @@
 import os
 
-#
-#  Establishes IntendedFor for M0 and B0 scans. Uses a more robust condition
-#  for distinguishing ASL and M0 scans.
-#
-#   8/9/2019: WT
-#
-
-
 def create_key(template, outtype=('nii.gz',), annotation_classes=None):
     if template is None or not template:
         raise ValueError('Template must be a valid format string')
