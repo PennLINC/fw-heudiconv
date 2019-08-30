@@ -46,6 +46,7 @@ def tabulate_bids(client, project_label, path=".", subject_labels=None,
     df = pd.DataFrame.from_dict(seq_info_dicts)
     if unique:
         df = df.drop_duplicates(subset=['TR', 'TE', 'protocol_name', 'is_motion_corrected', 'is_derived'])
+        df = df.drop(columns=['total_files_till_now', 'dcm_dir_name'])
     if dry_run:
         print(df)
     else:
@@ -96,10 +97,16 @@ def get_parser():
         default=False
     )
     parser.add_argument(
-        "--unique",
-        help="Strip down to unique sequence combinations",
-        default=True
+        '--unique',
+        dest='unique',
+        action='store_true'
     )
+    parser.add_argument(
+        '--no-unique',
+        dest='unique',
+        action='store_false'
+    )
+    parser.set_defaults(unique=True)
 
     return parser
 
