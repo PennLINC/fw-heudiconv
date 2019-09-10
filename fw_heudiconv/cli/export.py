@@ -7,6 +7,7 @@ import json
 import shutil
 import re
 import csv
+import pandas as pd
 from pathlib import Path
 from ..query import print_directory_tree
 
@@ -78,13 +79,15 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     'name': container.filename,
     'path': path,
     'type': type of file,
-    'data': container}
+    'data': container.id
+    }
     '''
     logger.info("Gathering bids data:")
 
     to_download = {
         'dataset_description': [],
         'project': [],
+        'subject': [],
         'session': [],
         'acquisition': []
     }
@@ -106,7 +109,8 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
         d = {
             'name': pf.name,
             'type': 'attachment',
-            'data': project_obj.id
+            'data': project_obj.id,
+            'BIDS': get_nested(pf, 'info', 'BIDS')
         }
         to_download['project'].append(d)
 
@@ -150,13 +154,13 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     return to_download
 
 
-def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap'], dry_run=True):
+def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap'], dry_run=True, name='bids_dataset'):
 
     if dry_run:
         logger.info("Preparing output directory tree...")
     else:
         logger.info("Downloading files...")
-    root_path = "/".join([root_path, "bids_dataset"])
+    root_path = "/".join([root_path, name])
     Path(root_path).mkdir()
     # handle dataset description
     if to_download['dataset_description']:
@@ -181,12 +185,25 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
                 bidsignore.writelines(ignored_modalities)
 
     # deal with project level files
-    # NOT YET IMPLEMENTED
+    # Project's subject data
     for fi in to_download['project']:
-        pass
+
+        project_path = get_nested(fi, 'BIDS', 'Path')
+        folder = get_nested(fi, 'BIDS', 'Folder')
+        ignore = get_nested(fi, 'BIDS', 'ignore')
+
+        if project_path \
+            and folder in folders_to_download \
+            and not ignore \
+            and any(fi['name'] == 'participants.tsv' or fi['name'] == 'participants.json'):
+
+            proj = client.get(fi['data'])
         #download_path = get_metadata(fi, ['BIDS', 'Path'])
         #if download_path:
         #    print('/'.join([root_path, download_path, fi['name']]))
+
+            proj.download_file(fi['name'], file_path)
+            download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
     # deal with session level files
     # NOT YET IMPLEMENTED
@@ -292,6 +309,12 @@ def get_parser():
         action='store_true',
         default=False
     )
+    parser.add_argument(
+        "--directory_name",
+        help="Name of the directory",
+        default="bids_directory",
+        type=str
+    )
 
     return parser
 
@@ -313,9 +336,10 @@ def main():
     downloads = gather_bids(client=fw,
                             project_label=project_label,
                             session_labels=args.session,
-                            subject_labels=args.subject)
+                            subject_labels=args.subject
+                            )
 
-    download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download=args.folders, dry_run=args.dry_run)
+    download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download=args.folders, dry_run=args.dry_run, name=args.directory_name)
 
 
 if __name__ == '__main__':
