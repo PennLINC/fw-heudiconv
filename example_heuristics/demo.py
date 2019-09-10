@@ -14,12 +14,12 @@ t1w = create_key('sub-{subject}/{session}/anat/sub-{subject}_{session}_T1w')
 # define the infotodict looping function
 def infotodict(seqinfo):
 
-    """Heuristic evaluator for determining which runs belong where
-    allowed template fields - follow python string module:
-    item: index within category
+    """Heuristic evaluator; use the following keywords:
+
     subject: participant id
-    seqitem: run number during scanning
-    subindex: sub index within group
+    session: session id
+    item: index within category (populated automatically from 1...n)
+    
     """
 
     # create a dict of your keys
