@@ -4,6 +4,7 @@ import importlib
 import argparse
 import warnings
 import flywheel
+import pprint
 from collections import defaultdict
 from ..convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
 from ..query import get_seq_info
@@ -94,7 +95,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     if hasattr(heuristic, "IntendedFor"):
         logger.info("Processing IntendedFor fields based on heuristic file")
         intention_map.update(heuristic.IntendedFor)
-        logger.debug("Intention map: %s", intention_map)
+        logger.debug("Intention map: %s", pprint.pformat([(k[0], v) for k, v in dict(intention_map).items()]))
 
     metadata_extras = defaultdict(list)
     if hasattr(heuristic, "MetadataExtras"):
@@ -123,9 +124,8 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             apply_heuristic(client, key, value, dry_run, intention_map[key],
                             metadata_extras[key], subject_rename, session_rename, seqitem+1)
 
-    if not dry_run:
-        for ses in sessions:
-            confirm_intentions(client, ses)
+    for ses in sessions:
+        confirm_intentions(client, ses, dry_run)
 
 def get_parser():
 
