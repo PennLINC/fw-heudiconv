@@ -30,7 +30,11 @@ setuptools.setup(
             'fw-heudiconv-curate=fw_heudiconv.cli.curate:main',
             'fw-heudiconv-export=fw_heudiconv.cli.export:main',
             'fw-heudiconv-tabulate=fw_heudiconv.cli.tabulate:main',
+<<<<<<< HEAD
             'fw-heudiconv-clear=fw_heudiconv.cli.clean:main'
+=======
+            'fw-heudiconv-clear=fw_heudiconv.cli.clear:main'
+>>>>>>> 895d53d2d7287a6cca9c8ce7a38f9304aa45f018
         ],
     }
 )
