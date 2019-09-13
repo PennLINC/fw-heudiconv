@@ -202,8 +202,8 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
         #if download_path:
         #    print('/'.join([root_path, download_path, fi['name']]))
 
-            proj.download_file(fi['name'], file_path)
-            download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
+            #proj.download_file(fi['name'], file_path)
+            #download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
     # deal with session level files
     # NOT YET IMPLEMENTED
