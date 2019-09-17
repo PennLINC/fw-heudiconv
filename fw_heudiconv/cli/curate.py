@@ -8,6 +8,7 @@ import pprint
 from collections import defaultdict
 from ..convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
 from ..query import get_seq_info
+from ..generate import generate_sessions_file, generate_participants_file
 from heudiconv import utils
 from heudiconv import heuristics
 import logging
@@ -34,19 +35,25 @@ def pretty_string_seqinfo(seqinfo):
 
 
 def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
-                    session_labels=None, dry_run=False):
+                    session_labels=None, dry_run=False, tsvs=None):
     """Converts a project to bids by reading the file entries from flywheel
     and using the heuristics to write back to the BIDS namespace of the flywheel
     containers
 
     Args:
-        client (Client): The flywheel sdk client
-        project_label (str): The label of the project
-        heuristic_path (str): The path to the heuristic file or the name of a
-            known heuristic
-        subject_code (str): The subject code
-        session_label (str): The session label
-        dry_run (bool): Print the changes, don't apply them on flywheel
+        client (Client):        The flywheel sdk client
+        project_label (str):    The label of the project
+        heuristic_path (str):   The path to the heuristic file
+                                or the name of a known heuristic
+        subject_code (str):     The subject code
+        session_label (str):    The session label
+        tsvs (4-tuple -->
+            (participants_from_file,
+             participants_auto,
+             sessions_from_file,
+             sessions_auto)
+             ):                 Decision array to generate participant/session TSVs
+        dry_run (bool):         Print the changes, don't apply them on flywheel
     """
 
     if dry_run:
@@ -127,6 +134,10 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     for ses in sessions:
         confirm_intentions(client, ses, dry_run)
 
+    generate_sessions_file(sessions, tsvs, dry_run)
+    generate_participants_file(sessions, tsvs, dry_run)
+
+
 def get_parser():
 
     parser = argparse.ArgumentParser(
@@ -167,6 +178,38 @@ def get_parser():
         default=False
     )
 
+    group_participants_file = parser.add_mutually_exclusive_group()
+    group_participants_file.add_argument(
+        "--participants-file",
+        help="Add a participants.tsv file to your dataset",
+        required=False,
+        type=argparse.FileType('r'),
+        default=None
+    )
+    group_participants_file.add_argument(
+        "--autogen-participants-file",
+        help="Automatically generate a participants.tsv file for your dataset",
+        action='store_true',
+        required=False,
+        default=False
+    )
+
+    group_sessions_files = parser.add_mutually_exclusive_group()
+    group_sessions_files.add_argument(
+        "--sessions-file",
+        help="Add a _sessions.tsv file to your dataset",
+        required=False,
+        type=argparse.FileType('r'),
+        default=None
+    )
+    group_sessions_files.add_argument(
+        "--autogen-sessions-file",
+        help="Automatically generate _sessions.tsv files for your dataset",
+        required=False,
+        action='store_true',
+        default=None
+    )
+
     return parser
 
 
@@ -179,15 +222,22 @@ def main():
     args = parser.parse_args()
 
     # Print a lot if requested
-    if args.verbose:
+    if args.verbose or args.dry_run:
         logger.setLevel(logging.DEBUG)
 
     project_label = ' '.join(args.project)
+
+    tsvs = {'participants_auto': args.autogen_participants_file,
+            'participants_file': args.participants_file,
+            'sessions_auto': args.autogen_sessions_file,
+            'sessions_file': args.sessions_file}
+
     convert_to_bids(client=fw,
                     project_label=project_label,
                     heuristic_path=args.heuristic,
                     session_labels=args.session,
                     subject_labels=args.subject,
+                    tsvs=tsvs,
                     dry_run=args.dry_run)
 
 

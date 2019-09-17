@@ -9,7 +9,7 @@ import traceback
 import pprint
 from .cli.export import get_nested
 
-logger = logging.getLogger('fwHeuDiConv-curator')
+logger = logging.getLogger(__name__)
 
 def build_intention_path(f):
     """Builds a string of the path to the file w.r.t. subject dir

@@ -1,8 +1,37 @@
-def generate_participants_file(participants_list, ):
+import logging
+import pprint
 
-    pass
+
+logger = logging.getLogger(__name__)
 
 
-def generate_sessions_file(sessions_list, heuristic_sessions_func):
+def generate_participants_file(sessions_list, tsvs, dry_run=False):
 
-    pass
+    if tsvs['participants_auto']:
+
+        logger.info("Generating participants.tsv auto-magically")
+        logger.debug(pprint.pprint(tsvs))
+
+    elif tsvs['participants_file'] is not None:
+
+        logger.info("Generating participants.tsv from file")
+        logger.debug(pprint.pprint(tsvs))
+
+    else:
+        return
+
+
+def generate_sessions_file(sessions_list, tsvs, dry_run=False):
+
+    if tsvs['sessions_auto']:
+
+        logger.info("Generating *_sessions.tsv's auto-magically")
+        logger.debug(pprint.pprint(tsvs))
+
+    elif tsvs['sessions_file'] is not None:
+
+        logger.info("Generating *_sessions.tsv's from file")
+        logger.debug(pprint.pprint(tsvs))
+
+    else:
+        return
