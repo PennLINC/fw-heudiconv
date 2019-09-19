@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-cleaner')
 
 
-def clear_bids(client, project_label, session_labels, subject_labels, dry_run=False, file_types = ['.nii', '.bval', '.bvec']):
+def clear_bids(client, project_label, session_labels=None, subject_labels=None, dry_run=False, file_types = ['.nii', '.bval', '.bvec']):
 
     logger.info("\t\t=======: fw-heudiconv starting up :=======\n")
     logger.info("Querying Flywheel server...")
@@ -63,7 +63,9 @@ def clear_bids(client, project_label, session_labels, subject_labels, dry_run=Fa
     for x in file_list:
         for k, v in x.items():
             for u in v:
-                fnames.append(get_nested(u, 'info', 'BIDS', 'Filename'))
+                name = get_nested(u, 'info', 'BIDS', 'Filename')
+                if name is not None:
+                    fnames.append(name)
 
     if file_list:
         logger.debug("This will remove BIDS data from %d files:\n\t%s" % (len(file_list), "\n\t".join([x for x in fnames])))
