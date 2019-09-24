@@ -50,7 +50,8 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
 
     files = [f for f in acquisition_object.files if f.type in ftypes]
     bids_keys = ['sub', 'ses', 'folder', 'name']
-    #ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
+    subj_label = subj_label if subj_label.startswith("sub-") else "sub-" + subj_label
+    sess_label = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
 
     files.sort(key=operator.itemgetter("name"))
     for fnum, f in enumerate(files):
