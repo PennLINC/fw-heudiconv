@@ -14,7 +14,7 @@ from heudiconv import heuristics
 import logging
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('fwHeuDiConv-curator')
+logger = logging.getLogger('fw-heudiconv-curator')
 
 def pretty_string_seqinfo(seqinfo):
     tr = seqinfo.TR if seqinfo.TR is not None else -1.0

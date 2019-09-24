@@ -72,7 +72,7 @@ def acquisition_to_heudiconv(client, acq, context):
             info.get("ProtocolName", ""),
             "MOCO" in info.get("ImageType", []),
             "DERIVED" in info.get("ImageType", []),
-            info.get("PatientID", context['subject'].code),
+            context['subject'].label,
             info.get("StudyDescription"),
             info.get("ReferringPhysicianName", ""),
             info.get("SeriesDescription", ""),
@@ -103,7 +103,9 @@ def session_to_seq_info(client, session, context):
     """
     seq_info = collections.OrderedDict()
     context['total'] = 0
-    for acquisition in session.acquisitions():
+    acquisitions = session.acquisitions()
+    sorted_acquisitions = sorted(acquisitions, key=lambda x: x.timestamp)
+    for acquisition in sorted_acquisitions:
         acquisition = client.get(acquisition.id)
         context['acquisition'] = acquisition
 
