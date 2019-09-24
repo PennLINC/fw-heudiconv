@@ -72,7 +72,7 @@ def acquisition_to_heudiconv(client, acq, context):
             info.get("ProtocolName", ""),
             "MOCO" in info.get("ImageType", []),
             "DERIVED" in info.get("ImageType", []),
-            info.get("PatientID", context['subject'].code),
+            context['subject'].label,
             info.get("StudyDescription"),
             info.get("ReferringPhysicianName", ""),
             info.get("SeriesDescription", ""),
