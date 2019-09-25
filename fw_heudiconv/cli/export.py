@@ -177,7 +177,7 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
     if not any(x['name'] == '.bidsignore' for x in to_download['project']):
         # write bids ignore
         path = "/".join([root_path, ".bidsignore"])
-        ignored_modalities = ['asl/\n', 'qsm/\n']
+        ignored_modalities = ['asl/\n', 'qsm/\n', '*.bval', '*.bvec']
         if dry_run:
             Path(path).touch()
         else:
@@ -263,14 +263,12 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
 
     logger.info("Done!")
     print_directory_tree(root_path)
-    if dry_run:
-        shutil.rmtree(root_path)
 
 
 def get_parser():
 
     parser = argparse.ArgumentParser(
-        description="Export BIDS compliant data")
+        description="Export BIDS-curated data from Flywheel")
     parser.add_argument(
         "--project",
         help="The project in flywheel",
@@ -279,39 +277,44 @@ def get_parser():
     )
     parser.add_argument(
         "--path",
-        help="The target directory to download",
-        required=True,
-        default="."
+        help="The target directory to download [DEPRECATED. PLEASE USE <DESTINATION> INSTEAD]",
+        default=None
     )
     parser.add_argument(
         "--subject",
-        help="The subject to curate",
+        help="The subject(s) to export",
         nargs="+",
         default=None,
         type=str
     )
     parser.add_argument(
         "--session",
-        help="The session to curate",
+        help="The session(s) to export",
         nargs="+",
         default=None,
         type=str
     )
     parser.add_argument(
         "--folders",
-        help="The BIDS folders to download",
+        help="The BIDS folders to export",
         nargs="+",
         default=['anat', 'dwi', 'fmap', 'func']
     )
     parser.add_argument(
         "--dry_run",
-        help="Don't apply changes",
+        help="Don't apply changes (only print the directory tree to the console)",
         action='store_true',
         default=False
     )
     parser.add_argument(
+        "--destination",
+        help="Path to destination directory",
+        default=".",
+        type=str
+    )
+    parser.add_argument(
         "--directory_name",
-        help="Name of the directory",
+        help="Name of destination directory",
         default="bids_directory",
         type=str
     )
@@ -329,18 +332,26 @@ def main():
 
     args = parser.parse_args()
     project_label = ' '.join(args.project)
-    if not os.path.exists(args.path):
-        logger.info("Creating target directory...")
-        os.makedirs(args.path)
-    #assert os.path.exists(args.path), "Path does not exist!"
+
+    if args.path:
+        destination = args.path
+    else:
+        destination = args.destination
+
+    if not os.path.exists(destination):
+        logger.info("Creating destination directory...")
+        os.makedirs(args.destination)
+
     downloads = gather_bids(client=fw,
                             project_label=project_label,
                             session_labels=args.session,
                             subject_labels=args.subject
                             )
 
-    download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download=args.folders, dry_run=args.dry_run, name=args.directory_name)
+    download_bids(client=fw, to_download=downloads, root_path=destination, folders_to_download=args.folders, dry_run=args.dry_run, name=args.directory_name)
 
+    if args.dry_run:
+        shutil.rmtree(Path(args.destination, args.directory_name))
 
 if __name__ == '__main__':
     main()
