@@ -177,7 +177,7 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
     if not any(x['name'] == '.bidsignore' for x in to_download['project']):
         # write bids ignore
         path = "/".join([root_path, ".bidsignore"])
-        ignored_modalities = ['asl/\n', 'qsm/\n', '*.bval', '*.bvec']
+        ignored_modalities = ['asl/\n', 'qsm/\n', '*.bval\n', '*.bvec\n']
         if dry_run:
             Path(path).touch()
         else:

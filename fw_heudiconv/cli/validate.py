@@ -14,6 +14,7 @@ logger = logging.getLogger('fw-heudiconv-validator')
 
 def validate_local(path, verbose):
 
+    logger.info("Launching bids-validator...")
     command = ['bids-validator', path]
     if verbose:
         command.extend(['--verbose'])
@@ -28,6 +29,7 @@ def validate_local(path, verbose):
 
 def fw_heudiconv_export(proj, subjects=None, sessions=None, destination="tmp", name="bids_directory"):
 
+    logger.info("Launching fw-heudiconv-export...")
     command = ['fw-heudiconv-export', '--project', ' '.join(proj), '--destination', destination, '--directory_name', name]
 
     if subjects:
@@ -113,21 +115,25 @@ def main():
             exit = validate_local(args.directory, args.verbose)
 
     else:
-        if not os.path.exists(args.directory):
-            logger.info("Creating download directory...")
-            os.makedirs(args.directory)
-
         if not args.project:
             logger.error("No project on Flywheel specified!")
             sys.exit(exit)
+
+        if not os.path.exists(args.directory):
+            logger.info("Creating download directory...")
+            os.makedirs(args.directory)
 
         success = fw_heudiconv_export(proj=args.project, subjects=args.subject, sessions=args.session, destination=args.directory, name='bids_directory')
 
         if success == 0:
             path = Path(args.directory + '/bids_directory')
-            validate_local(path, args.verbose)
+            exit = validate_local(path, args.verbose)
             shutil.rmtree(path)
 
+        else:
+
+            logger.error("There was a problem downloading the data to a temp space for validation!")
+    logger.info("Done!")
     sys.exit(exit)
 
 if __name__ == "__main__":
