@@ -130,7 +130,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
 def get_parser():
 
     parser = argparse.ArgumentParser(
-        description="Use a heudiconv heuristic to curate bids on flywheel")
+        description="Use a heudiconv heuristic to curate data into BIDS on flywheel")
     parser.add_argument(
         "--project",
         help="The project in flywheel",
