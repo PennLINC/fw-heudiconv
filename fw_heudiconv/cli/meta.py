@@ -7,6 +7,7 @@ import flywheel
 import pprint
 import logging
 import re
+import pandas as pd
 from pathlib import Path
 from ..convert import get_nested
 
@@ -60,15 +61,38 @@ def initialise_dataset(client, project_label, subject_labels=None, session_label
     return sessions
 
 
-def attach_to_project(proj_object, file):
+def attach_to_object(object, file):
 
     my_file = Path(file)
     if my_file.is_file():
-        proj_object.upload_file(my_file)
+        object.upload_file(my_file)
         return 0
     else:
         logger.error("Couldn't access file {}".format(file))
         return 1
+
+
+def autogen_participants_meta(sessions):
+
+    logger.error("Not yet implemented")
+    return 0
+
+
+def autogen_sessions_meta(sessions):
+
+    logger.error("Not yet implemented")
+    return 0
+
+
+def preproc_sessions_tsvs(sessions, input_file):
+
+    logger.error("Not yet implemented")
+    # df = pd.read_csv(input_file)
+    #
+    # for x in sessions
+    # subset and create a dictionary of session object: session.tsv file
+    # return dict
+    return 0
 
 
 def get_parser():
@@ -128,23 +152,9 @@ def get_parser():
         action='store_true',
         default=False
     )
-    participants_meta.add_argument(
+    sessions_meta.add_argument(
         "--upload-sessions-meta",
         help="Path to a sessions.tsv metadata file to upload",
-        action='store'
-    )
-
-    # dataset descr metadata
-    dataset_description = parser.add_mutually_exclusive_group()
-    dataset_description.add_argument(
-        "--autogen-dataset-description",
-        help="Automatically generate dataset_description. metadata",
-        action='store_true',
-        default=False
-    )
-    dataset_description.add_argument(
-        "--upload-dataset-description",
-        help="Path to a dataset_description.json metadata file to upload",
         action='store'
     )
 
@@ -152,6 +162,13 @@ def get_parser():
     parser.add_argument(
         "--scans",
         help="Path to a scans.tsv metadata file to upload",
+        action='store'
+    )
+
+    # dataset descr file
+    parser.add_argument(
+        "--dataset-description",
+        help="Path to a dataset_description.json metadata file to upload",
         action='store'
     )
 
@@ -181,7 +198,7 @@ def get_parser():
 
 
 def main():
-    status = 0
+    status = [0]
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         fw = flywheel.Client()
@@ -206,17 +223,44 @@ def main():
         'README': args.readme,
         'CHANGES': args.changes,
         'CODE': args.code,
-        'dataset_description.json': args.upload_dataset_description
+        'dataset_description.json': args.dataset_description
     }
 
     for k,v in project_level_uploads.items():
 
         if v is not None:
-            logger.info("Attempting to attach {} to project as {}...".format(v, k))
-            status = attach_to_project(fw.get(sessions[0].project), v)
+            logger.info("Attempting to attach {} to project".format(v))
+            status.append(attach_to_object(fw.get(sessions[0].project), v))
 
+    if args.autogen_participants_meta:
 
-    sys.exit(status)
+        logger.info("Auto-generating participants.tsv...")
+        status.append(autogen_participants_meta(sessions))
+
+    elif args.upload_participants_meta:
+
+        logger.info("Attempting to attach {} to project...".format(args.upload_participants_meta))
+        status.append(attach_to_object(fw.get(sessions[0].project), args.upload_participants_meta))
+
+    if args.autogen_sessions_meta:
+
+        logger.info("Auto-generating *_sessions.tsv...")
+        status.append(autogen_sessions_meta(sessions))
+
+    elif args.upload_sessions_meta:
+
+        logger.info("Attempting to attach {} to each subject...".format(args.upload_participants_meta))
+        sess_meta_dict = preproc_sessions_tsvs(sessions, args.upload_participants_meta)
+
+        for k, v in sess_meta_dict.items():
+            #write pandas value v to file
+            status.append(attach_to_object(k, v))
+            #delete file v
+
+    if any([x == 1 for x in status]):
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()
