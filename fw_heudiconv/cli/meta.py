@@ -7,6 +7,7 @@ import flywheel
 import pprint
 import logging
 import re
+from pathlib import Path
 from ..convert import get_nested
 
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +58,17 @@ def initialise_dataset(client, project_label, subject_labels=None, session_label
         sessions = [s for s in sessions if s.label in session_labels]
 
     return sessions
+
+
+def attach_to_project(proj_object, file):
+
+    my_file = Path(file)
+    if my_file.is_file():
+        proj_object.upload_file(my_file)
+        return 0
+    else:
+        logger.error("Couldn't access file {}".format(file))
+        return 1
 
 
 def get_parser():
@@ -169,6 +181,7 @@ def get_parser():
 
 
 def main():
+    status = 0
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         fw = flywheel.Client()
@@ -182,6 +195,28 @@ def main():
 
     print(args)
 
+    sessions = initialise_dataset(fw, args.project, args.subject, args.session, args.dry_run)
+
+    if len(sessions) < 1:
+        status = 1
+        logger.error("No sessions found!")
+        sys.exit(status)
+
+    project_level_uploads = {
+        'README': args.readme,
+        'CHANGES': args.changes,
+        'CODE': args.code,
+        'dataset_description.json': args.upload_dataset_description
+    }
+
+    for k,v in project_level_uploads.items():
+
+        if v is not None:
+            logger.info("Attempting to attach {} to project as {}...".format(v, k))
+            status = attach_to_project(fw.get(sessions[0].project), v)
+
+
+    sys.exit(status)
 
 if __name__ == '__main__':
     main()
