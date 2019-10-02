@@ -1,10 +1,8 @@
 import os
 import sys
-import importlib
 import argparse
 import warnings
 import flywheel
-import pprint
 import logging
 import re
 import pandas as pd
@@ -41,7 +39,6 @@ def get_BIDS_label_from_session(ses_object, regex='sub'):
         return final_label.pop()
     else:
         return None
-
 
 
 def initialise_dataset(client, project_label, subject_labels=None, session_labels=None, dry_run=True):
@@ -130,7 +127,6 @@ def autogen_sessions_meta(client, sessions):
                 subject_object = client.get(v[0].subject.id)
                 results.append(attach_to_object(subject_object, tmpdir+"/sub-{}_sessions.tsv".format(subject_label)))
                 shutil.rmtree(tmpdir)
-
             else:
                 logger.error("Couldn't create temp space to create .tsv files")
 
@@ -140,15 +136,26 @@ def autogen_sessions_meta(client, sessions):
         return 0
 
 
-def preproc_sessions_tsvs(sessions, input_file):
+def upload_to_session(client, sessions, label, infile):
 
-    logger.error("Not yet implemented")
-    # df = pd.read_csv(input_file)
-    #
-    # for x in sessions
-    # subset and create a dictionary of session object: session.tsv file
-    # return dict
-    return 0
+    subjects = {}
+    for sess in sessions:
+        sub = sess.subject.label
+        if sub in subjects:
+            subjects[sub].append(sess)
+        else:
+            subjects[sub] = [sess]
+
+    tmpdir = "./tmp"
+
+    if label in subjects:
+        target_sess = subjects[label][0]
+        subject_object = client.get(target_sess.subject.id)
+        result = attach_to_object(subject_object, infile)
+        return result
+    else:
+        logger.error("Given subject label {} not found!".format(label))
+        return 1
 
 
 def get_parser():
@@ -210,8 +217,9 @@ def get_parser():
     )
     sessions_meta.add_argument(
         "--upload-sessions-meta",
-        help="Path to a sessions.tsv metadata file to upload",
-        action='store'
+        help="<SUBJECT_LABEL> <PATH_TO_FILE> for *_sessions.tsv metadata file to upload",
+        nargs=2,
+        action='append'
     )
 
     # scans file
@@ -306,19 +314,15 @@ def main():
         status.append(autogen_sessions_meta(fw, sessions))
 
     elif args.upload_sessions_meta:
-
-        logger.info("Attempting to attach {} to each subject...".format(args.upload_participants_meta))
-        sess_meta_dict = preproc_sessions_tsvs(sessions, args.upload_participants_meta)
-
-        for k, v in sess_meta_dict.items():
-            #write pandas value v to file
-            status.append(attach_to_object(k, v))
-            #delete file v
+        for tup in args.upload_sessions_meta:
+            logger.info("Attempting to attach {} to {}...".format(tup[1], tup[0]))
+            status.append(upload_to_session(fw, sessions, tup[0], tup[1]))
 
     if any([x == 1 for x in status]):
         sys.exit(1)
     else:
         sys.exit(0)
+
 
 if __name__ == '__main__':
     main()
