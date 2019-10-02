@@ -73,7 +73,7 @@ def attach_to_object(object, file):
         return 1
 
 
-def autogen_participants_meta(sessions):
+def autogen_participants_meta(project_obj, sessions):
 
     participants = []
     for sess in sessions:
@@ -84,21 +84,65 @@ def autogen_participants_meta(sessions):
         })
     df = pd.DataFrame(participants)
     df = df[['participant_id', 'flywheel_id']]
-    print(df)
 
     tmpdir = "./tmp"
     if not os.path.exists(tmpdir):
         os.makedirs(tmpdir)
-        df.to_csv(tmpdir+"/participants.tsv", index = False, sep = "\t")
-        shutil.rmtree(tmpdir+"/participants.tsv")
+        df.to_csv(tmpdir+"/participants.tsv", index=False, sep="\t", na_rep="n/a")
+        result = attach_to_object(project_obj, tmpdir+"/participants.tsv")
+        shutil.rmtree(tmpdir)
+        return result
+    else:
+        logger.error("Couldn't create temp space to create .tsv files")
+        return 1
+
+
+def autogen_sessions_meta(client, sessions):
+
+    results = []
+    subjects = {}
+    for sess in sessions:
+        sub = sess.subject.label
+        if sub in subjects:
+            subjects[sub].append(sess)
+        else:
+            subjects[sub] = [sess]
+
+    tmpdir = "./tmp"
+
+    for k, v in subjects.items():
+
+        subject_label = get_BIDS_label_from_session(v[0], 'sub')
+        print(k)
+        print(subject_label)
+        if subject_label is None:
+            logger.error("Subject {} has no BIDS session data".format(k))
+            continue
+        else:
+            sessions_dict = {
+                'session_id': [get_BIDS_label_from_session(sess, 'ses') for sess in v],
+                'flywheel_id': [sess.label for sess in v]
+            }
+
+            df = pd.DataFrame(sessions_dict)
+
+            if not os.path.exists(tmpdir):
+                os.makedirs(tmpdir)
+                df.to_csv(tmpdir+"/sub-{}_sessions.tsv".format(subject_label), index=False, sep="\t", na_rep="n/a")
+                subject_object = client.get(v[0].subject.id)
+                print(df)
+                #results.append(attach_to_object(subject_object, tmpdir+"/participants.tsv"))
+                shutil.rmtree(tmpdir)
+
+            else:
+                logger.error("Couldn't create temp space to create .tsv files")
+
     logger.error("Not yet implemented")
-    return 0
 
-
-def autogen_sessions_meta(sessions):
-
-    logger.error("Not yet implemented")
-    return 0
+    if any([x == 1 for x in results]):
+        return 1
+    else:
+        return 0
 
 
 def preproc_sessions_tsvs(sessions, input_file):
@@ -243,26 +287,28 @@ def main():
         'dataset_description.json': args.dataset_description
     }
 
+    project_obj = fw.get(sessions[0].project)
+
     for k,v in project_level_uploads.items():
 
         if v is not None:
             logger.info("Attempting to attach {} to project".format(v))
-            status.append(attach_to_object(fw.get(sessions[0].project), v))
+            status.append(attach_to_object(project_obj, v))
 
     if args.autogen_participants_meta:
 
         logger.info("Auto-generating participants.tsv...")
-        status.append(autogen_participants_meta(sessions))
+        status.append(autogen_participants_meta(project_obj, sessions))
 
     elif args.upload_participants_meta:
 
         logger.info("Attempting to attach {} to project...".format(args.upload_participants_meta))
-        status.append(attach_to_object(fw.get(sessions[0].project), args.upload_participants_meta))
+        status.append(attach_to_object(project_obj, args.upload_participants_meta))
 
     if args.autogen_sessions_meta:
 
         logger.info("Auto-generating *_sessions.tsv...")
-        status.append(autogen_sessions_meta(sessions))
+        status.append(autogen_sessions_meta(fw, sessions))
 
     elif args.upload_sessions_meta:
 
