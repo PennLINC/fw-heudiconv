@@ -8,6 +8,7 @@ import pprint
 import logging
 import re
 import pandas as pd
+import shutil
 from pathlib import Path
 from ..convert import get_nested
 
@@ -74,6 +75,22 @@ def attach_to_object(object, file):
 
 def autogen_participants_meta(sessions):
 
+    participants = []
+    for sess in sessions:
+
+        participants.append({
+            'participant_id': get_BIDS_label_from_session(sess),
+            'flywheel_id': sess.subject.label
+        })
+    df = pd.DataFrame(participants)
+    df = df[['participant_id', 'flywheel_id']]
+    print(df)
+
+    tmpdir = "./tmp"
+    if not os.path.exists(tmpdir):
+        os.makedirs(tmpdir)
+        df.to_csv(tmpdir+"/participants.tsv", index = False, sep = "\t")
+        shutil.rmtree(tmpdir+"/participants.tsv")
     logger.error("Not yet implemented")
     return 0
 
