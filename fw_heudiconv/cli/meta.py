@@ -113,8 +113,6 @@ def autogen_sessions_meta(client, sessions):
     for k, v in subjects.items():
 
         subject_label = get_BIDS_label_from_session(v[0], 'sub')
-        print(k)
-        print(subject_label)
         if subject_label is None:
             logger.error("Subject {} has no BIDS session data".format(k))
             continue
@@ -130,14 +128,11 @@ def autogen_sessions_meta(client, sessions):
                 os.makedirs(tmpdir)
                 df.to_csv(tmpdir+"/sub-{}_sessions.tsv".format(subject_label), index=False, sep="\t", na_rep="n/a")
                 subject_object = client.get(v[0].subject.id)
-                print(df)
-                #results.append(attach_to_object(subject_object, tmpdir+"/participants.tsv"))
+                results.append(attach_to_object(subject_object, tmpdir+"/sub-{}_sessions.tsv".format(subject_label)))
                 shutil.rmtree(tmpdir)
 
             else:
                 logger.error("Couldn't create temp space to create .tsv files")
-
-    logger.error("Not yet implemented")
 
     if any([x == 1 for x in results]):
         return 1
