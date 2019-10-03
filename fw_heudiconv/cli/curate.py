@@ -134,7 +134,6 @@ def get_parser():
     parser.add_argument(
         "--project",
         help="The project in flywheel",
-        nargs="+",
         required=True
     )
     parser.add_argument(
@@ -161,35 +160,49 @@ def get_parser():
         default=False
     )
     parser.add_argument(
-        "--dry_run",
+        "--dry-run",
         help="Don't apply changes",
         action='store_true',
         default=False
+    )
+    parser.add_argument(
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
     )
 
     return parser
 
 
 def main():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        fw = flywheel.Client()
-    assert fw, "Your Flywheel CLI credentials aren't set!"
+
+    logger.info("=======: fw-heudiconv curator starting up :=======\n".center(70))
+
     parser = get_parser()
     args = parser.parse_args()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        if args.api_key:
+            fw = flywheel.Flywheel(args.api_key)
+        else:
+            fw = flywheel.Client()
+    assert fw, "Your Flywheel CLI credentials aren't set!"
 
     # Print a lot if requested
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    project_label = ' '.join(args.project)
     convert_to_bids(client=fw,
-                    project_label=project_label,
+                    project_label=args.project,
                     heuristic_path=args.heuristic,
                     session_labels=args.session,
                     subject_labels=args.subject,
                     dry_run=args.dry_run)
 
-
+    logger.info("Done!")
+    logger.info("=======: Exiting fw-heudiconv curator :=======\n".center(70))
+    sys.exit()
 if __name__ == '__main__':
     main()

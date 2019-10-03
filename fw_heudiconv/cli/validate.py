@@ -1,11 +1,10 @@
-import flywheel
-import warnings
 import os
 import sys
 import shutil
 import subprocess as sub
 import logging
 import argparse
+import warnings
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
@@ -27,15 +26,17 @@ def validate_local(path, verbose):
     return p.returncode
 
 
-def fw_heudiconv_export(proj, subjects=None, sessions=None, destination="tmp", name="bids_directory"):
+def fw_heudiconv_export(proj, subjects=None, sessions=None, destination="tmp", name="bids_directory", key=None):
 
     logger.info("Launching fw-heudiconv-export...")
-    command = ['fw-heudiconv-export', '--project', ' '.join(proj), '--destination', destination, '--directory_name', name]
+    command = ['fw-heudiconv-export', '--project', ' '.join(proj), '--destination', destination, '--directory-name', name]
 
     if subjects:
         command.extend(['--subject'] + subjects)
     if sessions:
         command.extend(['--session'] + sessions)
+    if key:
+        command.extend(['--api-key'] + [key])
 
     p = sub.Popen(command, stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, universal_newlines=True)
     output, error = p.communicate()
@@ -93,15 +94,21 @@ def get_parser():
         default=False,
         action='store_true'
     )
-
+    parser.add_argument(
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
+    )
     return parser
 
 
 
 def main():
 
-    parser = get_parser()
+    logger.info("=======: fw-heudiconv validator starting up :=======\n".center(70))
 
+    parser = get_parser()
     args = parser.parse_args()
 
     exit = 1
@@ -123,7 +130,7 @@ def main():
             logger.info("Creating download directory...")
             os.makedirs(args.directory)
 
-        success = fw_heudiconv_export(proj=args.project, subjects=args.subject, sessions=args.session, destination=args.directory, name='bids_directory')
+        success = fw_heudiconv_export(proj=args.project, subjects=args.subject, sessions=args.session, destination=args.directory, name='bids_directory', key=args.api_key)
 
         if success == 0:
             path = Path(args.directory + '/bids_directory')
@@ -134,6 +141,7 @@ def main():
 
             logger.error("There was a problem downloading the data to a temp space for validation!")
     logger.info("Done!")
+    logger.info("=======: Exiting fw-heudiconv validator :=======\n".center(70))
     sys.exit(exit)
 
 if __name__ == "__main__":

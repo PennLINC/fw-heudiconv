@@ -63,7 +63,6 @@ def get_parser():
     parser.add_argument(
         "--project",
         help="The project in flywheel",
-        nargs="+",
         required=True
     )
     parser.add_argument(
@@ -106,32 +105,46 @@ def get_parser():
         dest='unique',
         action='store_false'
     )
+    parser.add_argument(
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
+    )
     parser.set_defaults(unique=True)
 
     return parser
 
 
 def main():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        fw = flywheel.Client()
-    assert fw, "Your Flywheel CLI credentials aren't set!"
+
+    logger.info("=======: fw-heudiconv tabulator starting up :=======\n".center(70))
+
     parser = get_parser()
     args = parser.parse_args()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        if args.api_key:
+            fw = flywheel.Client(args.api_key)
+        else:
+            fw = flywheel.Client()
+    assert fw, "Your Flywheel CLI credentials aren't set!"
 
     # Print a lot if requested
     if args.verbose or args.dry_run:
         logger.setLevel(logging.DEBUG)
 
-    project_label = ' '.join(args.project)
     tabulate_bids(client=fw,
-                  project_label=project_label,
+                  project_label=args.project,
                   path=args.path,
                   session_labels=args.session,
                   subject_labels=args.subject,
                   dry_run=args.dry_run,
                   unique=args.unique)
 
+    logger.info("Done!")
+    logger.info("=======: Exiting fw-heudiconv tabulator :=======\n".center(70))
 
 if __name__ == '__main__':
     main()

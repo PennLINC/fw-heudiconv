@@ -18,7 +18,8 @@ setuptools.setup(
     install_requires=[
         "flywheel-sdk",
         "heudiconv",
-        "pandas"
+        "pandas",
+        "bids-validator"
     ],
     classifiers=[
         "Programming Language :: Python :: 3.6",

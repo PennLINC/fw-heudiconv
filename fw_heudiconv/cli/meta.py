@@ -59,8 +59,11 @@ def initialise_dataset(client, project_label, subject_labels=None, session_label
     return sessions
 
 
-def attach_to_object(object, file):
+def attach_to_object(object, file, dry_run):
 
+    if dry_run:
+        logger.info("{}\t-->\t{}".format(file.ljust(20), ))
+        return 0
     my_file = Path(file)
     if my_file.is_file():
         object.upload_file(my_file)
@@ -70,7 +73,7 @@ def attach_to_object(object, file):
         return 1
 
 
-def autogen_participants_meta(project_obj, sessions):
+def autogen_participants_meta(project_obj, sessions, dry_run):
 
     participants = []
     for sess in sessions:
@@ -86,7 +89,7 @@ def autogen_participants_meta(project_obj, sessions):
     if not os.path.exists(tmpdir):
         os.makedirs(tmpdir)
         df.to_csv(tmpdir+"/participants.tsv", index=False, sep="\t", na_rep="n/a")
-        result = attach_to_object(project_obj, tmpdir+"/participants.tsv")
+        result = attach_to_object(project_obj, tmpdir+"/participants.tsv", dry_run)
         shutil.rmtree(tmpdir)
         return result
     else:
@@ -94,7 +97,7 @@ def autogen_participants_meta(project_obj, sessions):
         return 1
 
 
-def autogen_sessions_meta(client, sessions):
+def autogen_sessions_meta(client, sessions, dry_run):
 
     results = []
     subjects = {}
@@ -125,7 +128,7 @@ def autogen_sessions_meta(client, sessions):
                 os.makedirs(tmpdir)
                 df.to_csv(tmpdir+"/sub-{}_sessions.tsv".format(subject_label), index=False, sep="\t", na_rep="n/a")
                 subject_object = client.get(v[0].subject.id)
-                results.append(attach_to_object(subject_object, tmpdir+"/sub-{}_sessions.tsv".format(subject_label)))
+                results.append(attach_to_object(subject_object, tmpdir+"/sub-{}_sessions.tsv".format(subject_label), dry_run))
                 shutil.rmtree(tmpdir)
             else:
                 logger.error("Couldn't create temp space to create .tsv files")
@@ -136,7 +139,7 @@ def autogen_sessions_meta(client, sessions):
         return 0
 
 
-def upload_to_session(client, sessions, label, infile):
+def upload_to_session(client, sessions, label, infile, dry_run):
 
     subjects = {}
     for sess in sessions:
@@ -151,7 +154,7 @@ def upload_to_session(client, sessions, label, infile):
     if label in subjects:
         target_sess = subjects[label][0]
         subject_object = client.get(target_sess.subject.id)
-        result = attach_to_object(subject_object, infile)
+        result = attach_to_object(subject_object, infile, dry_run)
         return result
     else:
         logger.error("Given subject label {} not found!".format(label))
@@ -257,24 +260,38 @@ def get_parser():
         help="Path to CHANGES file to upload",
         action='store'
     )
+    parser.add_argument(
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
+    )
 
     return parser
 
 
 def main():
+
+    logger.info("=======: fw-heudiconv metadata manager starting up :=======\n".center(70))
     status = [0]
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        fw = flywheel.Client()
-    assert fw, "Your Flywheel CLI credentials aren't set!"
+
     parser = get_parser()
     args = parser.parse_args()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        if args.api_key:
+            fw = flywheel.Client(args.api_key)
+        else:
+            fw = flywheel.Client()
+    assert fw, "Your Flywheel CLI credentials aren't set!"
 
     # Print a lot if requested
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    print(args)
+    if args.dry_run:
+        logger.info("Running in `dry-run` mode (no changes will be applied).")
 
     sessions = initialise_dataset(fw, args.project, args.subject, args.session, args.dry_run)
 
@@ -296,28 +313,30 @@ def main():
 
         if v is not None:
             logger.info("Attempting to attach {} to project".format(v))
-            status.append(attach_to_object(project_obj, v))
+            status.append(attach_to_object(project_obj, v, args.dry_run))
 
     if args.autogen_participants_meta:
 
         logger.info("Auto-generating participants.tsv...")
-        status.append(autogen_participants_meta(project_obj, sessions))
+        status.append(autogen_participants_meta(project_obj, sessions, args.dry_run))
 
     elif args.upload_participants_meta:
 
         logger.info("Attempting to attach {} to project...".format(args.upload_participants_meta))
-        status.append(attach_to_object(project_obj, args.upload_participants_meta))
+        status.append(attach_to_object(project_obj, args.upload_participants_meta, args.dry_run))
 
     if args.autogen_sessions_meta:
 
         logger.info("Auto-generating *_sessions.tsv...")
-        status.append(autogen_sessions_meta(fw, sessions))
+        status.append(autogen_sessions_meta(fw, sessions, args.dry_run))
 
     elif args.upload_sessions_meta:
         for tup in args.upload_sessions_meta:
             logger.info("Attempting to attach {} to {}...".format(tup[1], tup[0]))
-            status.append(upload_to_session(fw, sessions, tup[0], tup[1]))
+            status.append(upload_to_session(fw, sessions, tup[0], tup[1], args.dry_run))
 
+    logger.info("Done!")
+    logger.info("=======: Exiting fw-heudiconv metadata manager :=======\n".center(70))
     if any([x == 1 for x in status]):
         sys.exit(1)
     else:

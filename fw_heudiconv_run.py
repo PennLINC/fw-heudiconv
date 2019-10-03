@@ -11,15 +11,15 @@ from fw_heudiconv.cli import curate, export, tabulate
 # logging stuff
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-gear')
-logger.info("=======: fw-heudiconv starting up :=======")
+logger.info("=======: fw-heudiconv gear manager starting up :=======\n".center(70))
 
 # start up inputs
 invocation = json.loads(open('config.json').read())
 config = invocation['config']
 inputs = invocation['inputs']
 destination = invocation['destination']
-
-fw = flywheel.Flywheel(inputs['api-key']['key'])
+key = inputs['api-key']['key']
+fw = flywheel.Flywheel(key)
 user = fw.get_current_user()
 
 # start up logic:
@@ -55,7 +55,7 @@ else:
     subjects = None
 
 # logging stuff
-logger.info("Running fw-heudiconv with the following settings:")
+logger.info("Calling fw-heudiconv with the following settings:")
 logger.info("Project: {}".format(project_label))
 logger.info("Subject(s): {}".format(subjects))
 logger.info("Session(s): {}".format(sessions))
@@ -64,33 +64,39 @@ logger.info("Action: {}".format(action))
 logger.info("Dry run: {}".format(dry_run))
 
 # action
-if config['action'] == "Curate":
+call = "fw-heudiconv-{} --dry-run --verbose --api-key {} --project {}".format(action.lower(), key, project_label, heuristic)
 
-    curate.convert_to_bids(fw, project_label, heuristic, subjects, sessions, dry_run=dry_run)
+if heuristic and action.lower() == "curate":
+    call = call + " --heuristic {}".format(heuristic)
+if subjects:
+    call = call + " --subject {}".format(" ".join(subjects))
+if sessions:
+    call = call + " --session {}".format(" ".join(sessions))
 
-elif config['action'] == "Export":
+if action.lower() == "export":
+    call = call + " --destination {}".format("/flywheel/v0/output")
 
-    downloads = export.gather_bids(fw, project_label, subjects, sessions)
-    export.download_bids(fw, downloads, "/flywheel/v0/output", dry_run=dry_run)
+if action.lower() == "meta":
+    call = call + " --autogen-participants-meta --autogen-sessions-meta"
 
-    if not dry_run:
+if action.lower() == "validate":
+    call = call + " --flywheel --directory {}".format("/flywheel/v0/output")
 
-        # tidy up
-        output_dir = "/flywheel/v0/output"
-        os.system("zip -r {}_BIDSexport.zip output/*".format(destination['id']))
-        os.system("mv *.zip output")
-        to_remove = os.listdir(output_dir)
-        to_remove = ["{}/{}".format(output_dir, x) for x in to_remove if ".zip" not in x]
-        for x in to_remove:
-            if os.path.isfile(x):
-                os.remove(x)
-            else:
-                shutil.rmtree(x)
+os.system(call)
 
-elif config['action'] == "Tabulate":
+if action.lower() in ["export", "tabulate"]:
 
-    tabulate.tabulate_bids(fw, project_label, "/flywheel/v0/output", subjects, sessions, dry_run=dry_run)
+    logger.info("Tidying output data...")
+    output_dir = "/flywheel/v0/output"
+    os.system("zip -r {0}/{1}_{2}.zip {0}/*".format(output_dir, destination['id'], action.lower()))
 
-else:
+    to_remove = os.listdir(output_dir)
+    to_remove = ["{}/{}".format(output_dir, x) for x in to_remove if ".zip" not in x]
+    for x in to_remove:
+        if os.path.isfile(x):
+            os.remove(x)
+        else:
+            shutil.rmtree(x)
 
-    raise Exception('Action not specified correctly!')
+logger.info("Done!")
+logger.info("=======: Exiting fw-heudiconv gear manager :=======\n".center(70))

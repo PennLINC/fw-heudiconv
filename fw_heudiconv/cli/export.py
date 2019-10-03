@@ -272,7 +272,6 @@ def get_parser():
     parser.add_argument(
         "--project",
         help="The project in flywheel",
-        nargs="+",
         required=True
     )
     parser.add_argument(
@@ -301,7 +300,7 @@ def get_parser():
         default=['anat', 'dwi', 'fmap', 'func']
     )
     parser.add_argument(
-        "--dry_run",
+        "--dry-run",
         help="Don't apply changes (only print the directory tree to the console)",
         action='store_true',
         default=False
@@ -313,10 +312,22 @@ def get_parser():
         type=str
     )
     parser.add_argument(
-        "--directory_name",
+        "--directory-name",
         help="Name of destination directory",
         default="bids_directory",
         type=str
+    )
+    parser.add_argument(
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
+    )
+    parser.add_argument(
+        "--verbose",
+        help="Print ongoing messages of progress",
+        action='store_true',
+        default=False
     )
 
     return parser
@@ -324,14 +335,17 @@ def get_parser():
 
 def main():
 
+    logger.info("=======: fw-heudiconv exporter starting up :=======\n".center(70))
+    parser = get_parser()
+    args = parser.parse_args()
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        fw = flywheel.Client()
+        if args.api_key:
+            fw = flywheel.Client(args.api_key)
+        else:
+            fw = flywheel.Client()
     assert fw, "Your Flywheel CLI credentials aren't set!"
-    parser = get_parser()
-
-    args = parser.parse_args()
-    project_label = ' '.join(args.project)
 
     if args.path:
         destination = args.path
@@ -343,7 +357,7 @@ def main():
         os.makedirs(args.destination)
 
     downloads = gather_bids(client=fw,
-                            project_label=project_label,
+                            project_label=args.project,
                             session_labels=args.session,
                             subject_labels=args.subject
                             )
@@ -352,6 +366,9 @@ def main():
 
     if args.dry_run:
         shutil.rmtree(Path(args.destination, args.directory_name))
+
+    logger.info("Done!")
+    logger.info("=======: Exiting fw-heudiconv exporter :=======\n".center(70))
 
 if __name__ == '__main__':
     main()

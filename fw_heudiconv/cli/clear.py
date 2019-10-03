@@ -15,7 +15,6 @@ logger = logging.getLogger('fw-heudiconv-cleaner')
 
 def clear_bids(client, project_label, session_labels=None, subject_labels=None, dry_run=False, file_types = ['.nii', '.bval', '.bvec']):
 
-    logger.info("\t\t=======: fw-heudiconv starting up :=======\n")
     logger.info("Querying Flywheel server...")
 
     with warnings.catch_warnings():
@@ -123,22 +122,34 @@ def get_parser():
         default=False
     )
     parser.add_argument(
-        "--dry_run",
+        "--dry-run",
         help="Don't apply changes",
         action='store_true',
         default=False
+    )
+    parser.add_argument(
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
     )
 
     return parser
 
 
 def main():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        fw = flywheel.Client()
-    assert fw, "Your Flywheel CLI credentials aren't set!"
+
+    logger.info("=======: fw-heudiconv clearer starting up :=======\n".center(70))
     parser = get_parser()
     args = parser.parse_args()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        if args.api_key:
+            fw = flywheel.Client(args.api_key)
+        else:
+            fw = flywheel.Client()
+    assert fw, "Your Flywheel CLI credentials aren't set!"
 
     # Print a lot if requested
     if args.verbose:
@@ -151,7 +162,8 @@ def main():
                     subject_labels=args.subject,
                     dry_run=args.dry_run)
 
-    logger.info("\t\t=======: Done :=======")
+    logger.info("Done!")
+    logger.info("=======: Exiting fw-heudiconv clearer :=======\n".center(70))
     sys.exit(status)
 
 if __name__ == '__main__':
