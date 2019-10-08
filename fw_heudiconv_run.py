@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 import json
-import sys
 import flywheel
 import os
 import shutil
 import logging
-from fw_heudiconv.cli import curate, export, tabulate
+from fw_heudiconv.cli import export
 
 
 # logging stuff

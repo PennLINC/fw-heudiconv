@@ -106,7 +106,7 @@ def get_parser():
 
 def main():
 
-    logger.info("=======: fw-heudiconv validator starting up :=======\n".center(70))
+    logger.info("{:=^70}\n".format(": fw-heudiconv validator starting up :"))
 
     parser = get_parser()
     args = parser.parse_args()
@@ -141,7 +141,7 @@ def main():
 
             logger.error("There was a problem downloading the data to a temp space for validation!")
     logger.info("Done!")
-    logger.info("=======: Exiting fw-heudiconv validator :=======\n".center(70))
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv validator :"))
     sys.exit(exit)
 
 if __name__ == "__main__":

@@ -53,8 +53,6 @@ def tabulate_bids(client, project_label, path=".", subject_labels=None,
         df.to_csv("{}/{}_SeqInfo.tsv".format(path, project_label),
                   sep="\t", index=False)
 
-    logger.info("Done!")
-
 
 def get_parser():
 
@@ -95,12 +93,14 @@ def get_parser():
         action='store_true',
         default=False
     )
-    parser.add_argument(
+    unique = parser.add_mutually_exclusive_group()
+
+    unique.add_argument(
         '--unique',
         dest='unique',
         action='store_true'
     )
-    parser.add_argument(
+    unique.add_argument(
         '--no-unique',
         dest='unique',
         action='store_false'
@@ -111,14 +111,13 @@ def get_parser():
         action='store',
         default=None
     )
-    parser.set_defaults(unique=True)
 
     return parser
 
 
 def main():
 
-    logger.info("=======: fw-heudiconv tabulator starting up :=======\n".center(70))
+    logger.info("{:=^70}\n".format(": fw-heudiconv tabulator starting up :"))
 
     parser = get_parser()
     args = parser.parse_args()
@@ -144,7 +143,7 @@ def main():
                   unique=args.unique)
 
     logger.info("Done!")
-    logger.info("=======: Exiting fw-heudiconv tabulator :=======\n".center(70))
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv tabulator :"))
 
 if __name__ == '__main__':
     main()

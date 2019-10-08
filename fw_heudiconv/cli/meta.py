@@ -272,7 +272,7 @@ def get_parser():
 
 def main():
 
-    logger.info("=======: fw-heudiconv metadata manager starting up :=======\n".center(70))
+    logger.info("{:=^70}\n".format(": fw-heudiconv metadata manager starting up :"))
     status = [0]
 
     parser = get_parser()
@@ -336,7 +336,7 @@ def main():
             status.append(upload_to_session(fw, sessions, tup[0], tup[1], args.dry_run))
 
     logger.info("Done!")
-    logger.info("=======: Exiting fw-heudiconv metadata manager :=======\n".center(70))
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv metadata manager :"))
     if any([x == 1 for x in status]):
         sys.exit(1)
     else:

@@ -335,7 +335,7 @@ def get_parser():
 
 def main():
 
-    logger.info("=======: fw-heudiconv exporter starting up :=======\n".center(70))
+    logger.info("{:=^70}\n".format(": fw-heudiconv exporter starting up :"))
     parser = get_parser()
     args = parser.parse_args()
 
@@ -368,7 +368,7 @@ def main():
         shutil.rmtree(Path(args.destination, args.directory_name))
 
     logger.info("Done!")
-    logger.info("=======: Exiting fw-heudiconv exporter :=======\n".center(70))
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv exporter :"))
 
 if __name__ == '__main__':
     main()

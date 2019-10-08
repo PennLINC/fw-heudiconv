@@ -1,15 +1,11 @@
-import os
-import ast
-import json
 import logging
 import re
 import operator
-import re
-import traceback
 import pprint
 from .cli.export import get_nested
 
 logger = logging.getLogger(__name__)
+
 
 def build_intention_path(f):
     """Builds a string of the path to the file w.r.t. subject dir
@@ -19,8 +15,10 @@ def build_intention_path(f):
     ses = fname.split("_")[1]
     return("/".join([ses, folder, fname]))
 
+
 def none_replace(str_input):
     return str_input
+
 
 def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[],
                     metadata_extras={}, subj_replace=None, ses_replace=None, item_num=1):
@@ -216,6 +214,7 @@ def infer_params_from_filename(bdict):
 
     bdict.update(to_fill)
 
+
 def confirm_intentions(client, session, dry_run=False):
 
     try:
@@ -231,8 +230,20 @@ def confirm_intentions(client, session, dry_run=False):
             else:
                 full_filenames.append("/".join(x))
 
-        ses_labs = [re.search(r"ses-[a-zA-z0-9]+(?=_)", x).group() for x in full_filenames if x is not None] #some subjects don't have BIDS, this is useless
-        sub_labs = [re.search(r"sub-[a-zA-z0-9]+(?=_)", x).group() for x in full_filenames if x is not None]
+        ses_labs = []
+        sub_labs = []
+
+        for x in full_filenames:
+            if x is not None:
+
+                ses_search = re.search(r"ses-[a-zA-z0-9]+(?=_)", x)
+                sub_search = re.search(r"sub-[a-zA-z0-9]+(?=_)", x)
+
+                if ses_search:
+                    ses_labs.append(ses_search.group())
+                if sub_search:
+                    sub_labs.append(ses_search.group())
+
         l2 = list(zip(sub_labs, ses_labs, full_filenames))
 
         paths = []
@@ -257,8 +268,8 @@ def confirm_intentions(client, session, dry_run=False):
 
     except Exception as e:
         logger.warning("Trouble updating intentions for this session %s", session.label)
-        print(e)
-        traceback.print_exc()
+        logger.warning(e)
+
 
 def confirm_bids_namespace(project_obj, dry_run):
 
@@ -270,7 +281,8 @@ def confirm_bids_namespace(project_obj, dry_run):
 
             logger.debug("Adding default BIDS namespace...")
 
-            bids = { 'BIDS': {'Acknowledgements': '',
+            bids = {
+                'BIDS': {'Acknowledgements': '',
                 'Authors': [],
                 'BIDSVersion': '1.0.2',
                 'DatasetDOI': '',

@@ -10,7 +10,7 @@ with warnings.catch_warnings():
 
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('fw-heudiconv-cleaner')
+logger = logging.getLogger('fw-heudiconv-clearer')
 
 
 def clear_bids(client, project_label, session_labels=None, subject_labels=None, dry_run=False, file_types = ['.nii', '.bval', '.bvec']):
@@ -139,7 +139,7 @@ def get_parser():
 
 def main():
 
-    logger.info("=======: fw-heudiconv clearer starting up :=======\n".center(70))
+    logger.info("{:=^70}\n".format(": fw-heudiconv clearer starting up :"))
     parser = get_parser()
     args = parser.parse_args()
 
@@ -163,7 +163,7 @@ def main():
                     dry_run=args.dry_run)
 
     logger.info("Done!")
-    logger.info("=======: Exiting fw-heudiconv clearer :=======\n".center(70))
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv clearer :"))
     sys.exit(status)
 
 if __name__ == '__main__':

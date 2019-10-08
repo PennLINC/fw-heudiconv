@@ -9,11 +9,11 @@ from collections import defaultdict
 from ..convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
 from ..query import get_seq_info
 from heudiconv import utils
-from heudiconv import heuristics
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-curator')
+
 
 def pretty_string_seqinfo(seqinfo):
     tr = seqinfo.TR if seqinfo.TR is not None else -1.0
@@ -87,6 +87,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     logger.info("Applying heuristic to query results...")
     to_rename = heuristic.infotodict(seq_infos)
 
+    print(to_rename)
     if not to_rename:
         logger.debug("No changes to apply!")
         sys.exit(1)
@@ -126,6 +127,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
 
     for ses in sessions:
         confirm_intentions(client, ses, dry_run)
+
 
 def get_parser():
 
@@ -177,7 +179,7 @@ def get_parser():
 
 def main():
 
-    logger.info("=======: fw-heudiconv curator starting up :=======\n".center(70))
+    logger.info("{:=^70}\n".format(": fw-heudiconv curator starting up :"))
 
     parser = get_parser()
     args = parser.parse_args()
@@ -202,7 +204,9 @@ def main():
                     dry_run=args.dry_run)
 
     logger.info("Done!")
-    logger.info("=======: Exiting fw-heudiconv curator :=======\n".center(70))
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv curator :"))
     sys.exit()
+
+
 if __name__ == '__main__':
     main()
