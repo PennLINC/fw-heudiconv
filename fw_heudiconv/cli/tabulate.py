@@ -88,7 +88,7 @@ def get_parser():
         default=False
     )
     parser.add_argument(
-        "--dry_run",
+        "--dry-run",
         help="Don't apply changes",
         action='store_true',
         default=False

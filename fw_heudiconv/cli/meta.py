@@ -62,7 +62,7 @@ def initialise_dataset(client, project_label, subject_labels=None, session_label
 def attach_to_object(object, file, dry_run):
 
     if dry_run:
-        logger.info("{}\t-->\t{}".format(file.ljust(20), ))
+        logger.info("{}\t-->\t{}".format(file.ljust(20), object.label))
         return 0
     my_file = Path(file)
     if my_file.is_file():

@@ -10,7 +10,7 @@ from fw_heudiconv.cli import export
 # logging stuff
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-gear')
-logger.info("=======: fw-heudiconv gear manager starting up :=======\n".center(70))
+logger.info("{:=^70}\n".format(": fw-heudiconv gear manager starting up :"))
 
 # start up inputs
 invocation = json.loads(open('config.json').read())
@@ -63,7 +63,10 @@ logger.info("Action: {}".format(action))
 logger.info("Dry run: {}".format(dry_run))
 
 # action
-call = "fw-heudiconv-{} --dry-run --verbose --api-key {} --project {}".format(action.lower(), key, project_label, heuristic)
+call = "fw-heudiconv-{} --verbose --api-key {} --project {}".format(action.lower(), key, project_label, heuristic)
+
+if dry_run:
+    call  = call + " --dry-run"
 
 if heuristic and action.lower() == "curate":
     call = call + " --heuristic {}".format(heuristic)
@@ -80,6 +83,9 @@ if action.lower() == "meta":
 
 if action.lower() == "validate":
     call = call + " --flywheel --directory {}".format("/flywheel/v0/output")
+
+if action.lower() == "tabulate":
+    call = call + " --path {}".format("/flywheel/v0/output")
 
 os.system(call)
 
@@ -98,4 +104,4 @@ if action.lower() in ["export", "tabulate"]:
             shutil.rmtree(x)
 
 logger.info("Done!")
-logger.info("=======: Exiting fw-heudiconv gear manager :=======\n".center(70))
+logger.info("{:=^70}\n".format(": Exiting fw-heudiconv gear manager :"))
