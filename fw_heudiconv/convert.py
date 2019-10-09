@@ -1,14 +1,11 @@
-import os
-import ast
-import json
 import logging
 import re
 import operator
-import re
-import traceback
+import pprint
 from .cli.export import get_nested
 
-logger = logging.getLogger('fwHeuDiConv-curator')
+logger = logging.getLogger(__name__)
+
 
 def build_intention_path(f):
     """Builds a string of the path to the file w.r.t. subject dir
@@ -18,8 +15,10 @@ def build_intention_path(f):
     ses = fname.split("_")[1]
     return("/".join([ses, folder, fname]))
 
+
 def none_replace(str_input):
     return str_input
+
 
 def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[],
                     metadata_extras={}, subj_replace=None, ses_replace=None, item_num=1):
@@ -49,11 +48,12 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
 
     files = [f for f in acquisition_object.files if f.type in ftypes]
     bids_keys = ['sub', 'ses', 'folder', 'name']
-    ses_fmt = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
+    subj_label = subj_label if subj_label.startswith("sub-") else "sub-" + subj_label
+    sess_label = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
 
     files.sort(key=operator.itemgetter("name"))
     for fnum, f in enumerate(files):
-        bids_vals = template.format(subject=subj_label, session=ses_fmt, item=fnum+1, seqitem=item_num).split("/")
+        bids_vals = template.format(subject=subj_label, session=sess_label, item=fnum+1, seqitem=item_num).split("/")
         bids_dict = dict(zip(bids_keys, bids_vals))
         suffix = suffixes[f.type]
 
@@ -79,9 +79,9 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
             acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
 
         if intended_for and (f.name.endswith(".nii.gz") or f.name.endswith(".nii")):
-            intendeds = [intend.format(subject=subj_label, session=ses_fmt)
+            intendeds = [intend.format(subject=subj_label, session=sess_label)
                          for intend in intended_for]
-            logger.debug("%s IntendedFor: %s", new_bids['Filename'], intendeds)
+            logger.debug("%s IntendedFor: %s", pprint.pformat(new_bids['Filename']), pprint.pformat(intendeds))
             if not dry_run:
                 acquisition_object.update_file_info(f.name, {'IntendedFor': intendeds})
 
@@ -214,7 +214,8 @@ def infer_params_from_filename(bdict):
 
     bdict.update(to_fill)
 
-def confirm_intentions(client, session):
+
+def confirm_intentions(client, session, dry_run=False):
 
     try:
         acqs = [client.get(s.id) for s in session.acquisitions()]
@@ -228,8 +229,23 @@ def confirm_intentions(client, session):
                 pass
             else:
                 full_filenames.append("/".join(x))
-        ses_labs = [re.search(r"ses-[a-zA-z0-9]+(?=_)", x).group() for x in full_filenames if x is not None]
-        l2 = list(zip(ses_labs, full_filenames))
+
+        ses_labs = []
+        sub_labs = []
+
+        for x in full_filenames:
+            if x is not None:
+
+                ses_search = re.search(r"ses-[a-zA-z0-9]+(?=_)", x)
+                sub_search = re.search(r"sub-[a-zA-z0-9]+(?=_)", x)
+
+                if ses_search:
+                    ses_labs.append(ses_search.group())
+                if sub_search:
+                    sub_labs.append(ses_search.group())
+
+        l2 = list(zip(sub_labs, ses_labs, full_filenames))
+
         paths = []
         for x in l2:
             if not(None in x):
@@ -238,19 +254,22 @@ def confirm_intentions(client, session):
         for a in acqs:
             for x in a.files:
                 if x.type == 'nifti':
+
                     intendeds = get_nested(x.to_dict(), 'info', 'IntendedFor')
+
                     if intendeds:
                         if not all([i in paths for i in intendeds]):
                             logger.debug("Ensuring all intentions apply for acquisition %s: %s", a.label, x.name)
                             exists = [i for i in intendeds if i in paths]
                             missing = [i for i in intendeds if i not in paths]
                             logger.debug("Missing paths: %s" % missing)
-                            a.update_file_info(x.name, {'IntendedFor': exists})
+                            if not dry_run:
+                                a.update_file_info(x.name, {'IntendedFor': exists})
 
     except Exception as e:
         logger.warning("Trouble updating intentions for this session %s", session.label)
-        print(e)
-        traceback.print_exc()
+        logger.warning(e)
+
 
 def confirm_bids_namespace(project_obj, dry_run):
 
@@ -262,7 +281,8 @@ def confirm_bids_namespace(project_obj, dry_run):
 
             logger.debug("Adding default BIDS namespace...")
 
-            bids = { 'BIDS': {'Acknowledgements': '',
+            bids = {
+                'BIDS': {'Acknowledgements': '',
                 'Authors': [],
                 'BIDSVersion': '1.0.2',
                 'DatasetDOI': '',

@@ -46,13 +46,12 @@ def tabulate_bids(client, project_label, path=".", subject_labels=None,
     df = pd.DataFrame.from_dict(seq_info_dicts)
     if unique:
         df = df.drop_duplicates(subset=['TR', 'TE', 'protocol_name', 'is_motion_corrected', 'is_derived'])
+        df = df.drop(columns=['total_files_till_now', 'dcm_dir_name'])
     if dry_run:
         print(df)
     else:
         df.to_csv("{}/{}_SeqInfo.tsv".format(path, project_label),
                   sep="\t", index=False)
-
-    logger.info("Done!")
 
 
 def get_parser():
@@ -62,7 +61,6 @@ def get_parser():
     parser.add_argument(
         "--project",
         help="The project in flywheel",
-        nargs="+",
         required=True
     )
     parser.add_argument(
@@ -90,41 +88,62 @@ def get_parser():
         default=False
     )
     parser.add_argument(
-        "--dry_run",
+        "--dry-run",
         help="Don't apply changes",
         action='store_true',
         default=False
     )
+    unique = parser.add_mutually_exclusive_group()
+
+    unique.add_argument(
+        '--unique',
+        dest='unique',
+        action='store_true'
+    )
+    unique.add_argument(
+        '--no-unique',
+        dest='unique',
+        action='store_false'
+    )
     parser.add_argument(
-        "--unique",
-        help="Strip down to unique sequence combinations",
-        default=True
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
     )
 
     return parser
 
 
 def main():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        fw = flywheel.Client()
-    assert fw, "Your Flywheel CLI credentials aren't set!"
+
+    logger.info("{:=^70}\n".format(": fw-heudiconv tabulator starting up :"))
+
     parser = get_parser()
     args = parser.parse_args()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        if args.api_key:
+            fw = flywheel.Client(args.api_key)
+        else:
+            fw = flywheel.Client()
+    assert fw, "Your Flywheel CLI credentials aren't set!"
 
     # Print a lot if requested
     if args.verbose or args.dry_run:
         logger.setLevel(logging.DEBUG)
 
-    project_label = ' '.join(args.project)
     tabulate_bids(client=fw,
-                  project_label=project_label,
+                  project_label=args.project,
                   path=args.path,
                   session_labels=args.session,
                   subject_labels=args.subject,
                   dry_run=args.dry_run,
                   unique=args.unique)
 
+    logger.info("Done!")
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv tabulator :"))
 
 if __name__ == '__main__':
     main()

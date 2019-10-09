@@ -12,17 +12,17 @@ COPY manifest.json ${FLYWHEEL}/manifest.json
 ENTRYPOINT ["/flywheel/v0/fw_heudiconv_run.py"]
 
 # Copy over python scripts that generate the BIDS hierarchy
-RUN apt-get -y update
-RUN apt-get install -y zip
-RUN pip install --no-cache heudiconv flywheel-sdk pandas
+RUN apt-get -y update && apt-get install -y curl
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash
+RUN apt-get -y update && apt-get install -y zip nodejs
+RUN npm install -g bids-validator
+RUN pip install --no-cache heudiconv nipype flywheel-sdk pandas
+
 COPY . /src
+
 RUN cd /src \
     && pip install . \
-    && pip install --no-cache --no-deps heudiconv \
-    && pip install --no-cache flywheel-sdk \
-    && pip install --no-cache nipype \
-    && rm -rf /src \
-    && apt-get install -y --no-install-recommends zip
+    && rm -rf /src
 
 COPY fw_heudiconv_run.py /flywheel/v0/fw_heudiconv_run.py
 RUN chmod +x ${FLYWHEEL}/*

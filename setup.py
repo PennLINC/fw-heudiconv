@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="fw_heudiconv",
-    version="0.0.18",
+    version="0.1.0",
     author="Tinashe M. Tapera, Matt Cieslak, Harsha Kethineni",
     author_email="tinashemtapera@gmail.com",
     description="Use heudiconv heuristics for BIDS curation on flywheel",
@@ -18,7 +18,8 @@ setuptools.setup(
     install_requires=[
         "flywheel-sdk",
         "heudiconv",
-        "pandas"
+        "pandas",
+        "bids-validator"
     ],
     classifiers=[
         "Programming Language :: Python :: 3.6",
@@ -29,7 +30,10 @@ setuptools.setup(
         'console_scripts': [
             'fw-heudiconv-curate=fw_heudiconv.cli.curate:main',
             'fw-heudiconv-export=fw_heudiconv.cli.export:main',
-            'fw-heudiconv-tabulate=fw_heudiconv.cli.tabulate:main'
+            'fw-heudiconv-tabulate=fw_heudiconv.cli.tabulate:main',
+            'fw-heudiconv-clear=fw_heudiconv.cli.clear:main',
+            'fw-heudiconv-validate=fw_heudiconv.cli.validate:main',
+            'fw-heudiconv-meta=fw_heudiconv.cli.meta:main'
         ],
     }
 )

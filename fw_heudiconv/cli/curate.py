@@ -4,15 +4,16 @@ import importlib
 import argparse
 import warnings
 import flywheel
+import pprint
 from collections import defaultdict
 from ..convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
 from ..query import get_seq_info
 from heudiconv import utils
-from heudiconv import heuristics
 import logging
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('fwHeuDiConv-curator')
+logger = logging.getLogger('fw-heudiconv-curator')
+
 
 def pretty_string_seqinfo(seqinfo):
     tr = seqinfo.TR if seqinfo.TR is not None else -1.0
@@ -86,6 +87,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     logger.info("Applying heuristic to query results...")
     to_rename = heuristic.infotodict(seq_infos)
 
+    print(to_rename)
     if not to_rename:
         logger.debug("No changes to apply!")
         sys.exit(1)
@@ -94,7 +96,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     if hasattr(heuristic, "IntendedFor"):
         logger.info("Processing IntendedFor fields based on heuristic file")
         intention_map.update(heuristic.IntendedFor)
-        logger.debug("Intention map: %s", intention_map)
+        logger.debug("Intention map: %s", pprint.pformat([(k[0], v) for k, v in dict(intention_map).items()]))
 
     metadata_extras = defaultdict(list)
     if hasattr(heuristic, "MetadataExtras"):
@@ -123,18 +125,17 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             apply_heuristic(client, key, value, dry_run, intention_map[key],
                             metadata_extras[key], subject_rename, session_rename, seqitem+1)
 
-    if not dry_run:
-        for ses in sessions:
-            confirm_intentions(client, ses)
+    for ses in sessions:
+        confirm_intentions(client, ses, dry_run)
+
 
 def get_parser():
 
     parser = argparse.ArgumentParser(
-        description="Use a heudiconv heuristic to curate bids on flywheel")
+        description="Use a heudiconv heuristic to curate data into BIDS on flywheel")
     parser.add_argument(
         "--project",
         help="The project in flywheel",
-        nargs="+",
         required=True
     )
     parser.add_argument(
@@ -161,34 +162,50 @@ def get_parser():
         default=False
     )
     parser.add_argument(
-        "--dry_run",
+        "--dry-run",
         help="Don't apply changes",
         action='store_true',
         default=False
+    )
+    parser.add_argument(
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
     )
 
     return parser
 
 
 def main():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        fw = flywheel.Client()
-    assert fw, "Your Flywheel CLI credentials aren't set!"
+
+    logger.info("{:=^70}\n".format(": fw-heudiconv curator starting up :"))
+
     parser = get_parser()
     args = parser.parse_args()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        if args.api_key:
+            fw = flywheel.Flywheel(args.api_key)
+        else:
+            fw = flywheel.Client()
+    assert fw, "Your Flywheel CLI credentials aren't set!"
 
     # Print a lot if requested
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    project_label = ' '.join(args.project)
     convert_to_bids(client=fw,
-                    project_label=project_label,
+                    project_label=args.project,
                     heuristic_path=args.heuristic,
                     session_labels=args.session,
                     subject_labels=args.subject,
                     dry_run=args.dry_run)
+
+    logger.info("Done!")
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv curator :"))
+    sys.exit()
 
 
 if __name__ == '__main__':

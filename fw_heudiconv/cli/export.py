@@ -7,6 +7,7 @@ import json
 import shutil
 import re
 import csv
+import pandas as pd
 from pathlib import Path
 from ..query import print_directory_tree
 
@@ -78,13 +79,15 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     'name': container.filename,
     'path': path,
     'type': type of file,
-    'data': container}
+    'data': container.id
+    }
     '''
     logger.info("Gathering bids data:")
 
     to_download = {
         'dataset_description': [],
         'project': [],
+        'subject': [],
         'session': [],
         'acquisition': []
     }
@@ -106,7 +109,8 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
         d = {
             'name': pf.name,
             'type': 'attachment',
-            'data': project_obj.id
+            'data': project_obj.id,
+            'BIDS': get_nested(pf, 'info', 'BIDS')
         }
         to_download['project'].append(d)
 
@@ -150,13 +154,13 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     return to_download
 
 
-def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap'], dry_run=True):
+def download_bids(client, to_download, root_path, folders_to_download = ['anat', 'dwi', 'func', 'fmap'], dry_run=True, name='bids_dataset'):
 
     if dry_run:
         logger.info("Preparing output directory tree...")
     else:
         logger.info("Downloading files...")
-    root_path = "/".join([root_path, "bids_dataset"])
+    root_path = "/".join([root_path, name])
     Path(root_path).mkdir()
     # handle dataset description
     if to_download['dataset_description']:
@@ -173,7 +177,7 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
     if not any(x['name'] == '.bidsignore' for x in to_download['project']):
         # write bids ignore
         path = "/".join([root_path, ".bidsignore"])
-        ignored_modalities = ['asl/\n', 'qsm/\n']
+        ignored_modalities = ['asl/\n', 'qsm/\n', '*.bval\n', '*.bvec\n']
         if dry_run:
             Path(path).touch()
         else:
@@ -181,12 +185,25 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
                 bidsignore.writelines(ignored_modalities)
 
     # deal with project level files
-    # NOT YET IMPLEMENTED
+    # Project's subject data
     for fi in to_download['project']:
-        pass
+
+        project_path = get_nested(fi, 'BIDS', 'Path')
+        folder = get_nested(fi, 'BIDS', 'Folder')
+        ignore = get_nested(fi, 'BIDS', 'ignore')
+
+        if project_path \
+            and folder in folders_to_download \
+            and not ignore \
+            and any(fi['name'] == 'participants.tsv' or fi['name'] == 'participants.json'):
+
+            proj = client.get(fi['data'])
         #download_path = get_metadata(fi, ['BIDS', 'Path'])
         #if download_path:
         #    print('/'.join([root_path, download_path, fi['name']]))
+
+            #proj.download_file(fi['name'], file_path)
+            #download_sidecar(fi['sidecar'], sidecar_path, remove_bids=True)
 
     # deal with session level files
     # NOT YET IMPLEMENTED
@@ -246,49 +263,69 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
 
     logger.info("Done!")
     print_directory_tree(root_path)
-    if dry_run:
-        shutil.rmtree(root_path)
 
 
 def get_parser():
 
     parser = argparse.ArgumentParser(
-        description="Export BIDS compliant data")
+        description="Export BIDS-curated data from Flywheel")
     parser.add_argument(
         "--project",
         help="The project in flywheel",
-        nargs="+",
         required=True
     )
     parser.add_argument(
         "--path",
-        help="The target directory to download",
-        required=True,
-        default="."
+        help="The target directory to download [DEPRECATED. PLEASE USE <DESTINATION> INSTEAD]",
+        default=None
     )
     parser.add_argument(
         "--subject",
-        help="The subject to curate",
+        help="The subject(s) to export",
         nargs="+",
         default=None,
         type=str
     )
     parser.add_argument(
         "--session",
-        help="The session to curate",
+        help="The session(s) to export",
         nargs="+",
         default=None,
         type=str
     )
     parser.add_argument(
         "--folders",
-        help="The BIDS folders to download",
+        help="The BIDS folders to export",
         nargs="+",
         default=['anat', 'dwi', 'fmap', 'func']
     )
     parser.add_argument(
-        "--dry_run",
-        help="Don't apply changes",
+        "--dry-run",
+        help="Don't apply changes (only print the directory tree to the console)",
+        action='store_true',
+        default=False
+    )
+    parser.add_argument(
+        "--destination",
+        help="Path to destination directory",
+        default=".",
+        type=str
+    )
+    parser.add_argument(
+        "--directory-name",
+        help="Name of destination directory",
+        default="bids_directory",
+        type=str
+    )
+    parser.add_argument(
+        "--api-key",
+        help="API Key",
+        action='store',
+        default=None
+    )
+    parser.add_argument(
+        "--verbose",
+        help="Print ongoing messages of progress",
         action='store_true',
         default=False
     )
@@ -298,22 +335,40 @@ def get_parser():
 
 def main():
 
+    logger.info("{:=^70}\n".format(": fw-heudiconv exporter starting up :"))
+    parser = get_parser()
+    args = parser.parse_args()
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        fw = flywheel.Client()
+        if args.api_key:
+            fw = flywheel.Client(args.api_key)
+        else:
+            fw = flywheel.Client()
     assert fw, "Your Flywheel CLI credentials aren't set!"
-    parser = get_parser()
 
-    args = parser.parse_args()
-    project_label = ' '.join(args.project)
-    assert os.path.exists(args.path), "Path does not exist!"
+    if args.path:
+        destination = args.path
+    else:
+        destination = args.destination
+
+    if not os.path.exists(destination):
+        logger.info("Creating destination directory...")
+        os.makedirs(args.destination)
+
     downloads = gather_bids(client=fw,
-                            project_label=project_label,
+                            project_label=args.project,
                             session_labels=args.session,
-                            subject_labels=args.subject)
+                            subject_labels=args.subject
+                            )
 
-    download_bids(client=fw, to_download=downloads, root_path=args.path, folders_to_download=args.folders, dry_run=args.dry_run)
+    download_bids(client=fw, to_download=downloads, root_path=destination, folders_to_download=args.folders, dry_run=args.dry_run, name=args.directory_name)
 
+    if args.dry_run:
+        shutil.rmtree(Path(args.destination, args.directory_name))
+
+    logger.info("Done!")
+    logger.info("{:=^70}".format(": Exiting fw-heudiconv exporter :"))
 
 if __name__ == '__main__':
     main()
