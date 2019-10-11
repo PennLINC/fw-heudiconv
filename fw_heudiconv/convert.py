@@ -4,7 +4,7 @@ import operator
 import pprint
 from .cli.export import get_nested
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('fw-heudiconv-curator')
 
 
 def build_intention_path(f):
