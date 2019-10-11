@@ -87,7 +87,6 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     logger.info("Applying heuristic to query results...")
     to_rename = heuristic.infotodict(seq_infos)
 
-    print(to_rename)
     if not to_rename:
         logger.debug("No changes to apply!")
         sys.exit(1)
