@@ -20,6 +20,14 @@ def none_replace(str_input):
     return str_input
 
 
+def force_template_format(str_input):
+
+    str_input = re.sub("(?<!ses-){session}", "ses-{session}", str_input)
+    str_input = re.sub("(?<!sub-){subject}", "sub-{subject}", str_input)
+
+    return(str_input)
+
+
 def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[],
                     metadata_extras={}, subj_replace=None, ses_replace=None, item_num=1):
     """ Apply heuristic to rename files
@@ -37,19 +45,17 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
     suffixes = {'nifti': ".nii.gz", 'bval': ".bval", 'bvec': ".bvec"}
     ftypes = ['nifti', 'bval', 'bvec', 'tsv']
     template, outtype, annotation_classes = heur
+    template = force_template_format(template)
+
     subj_replace = none_replace if subj_replace is None else subj_replace
     ses_replace = none_replace if ses_replace is None else ses_replace
 
     acquisition_object = client.get(acquisition_id)
-    sess_label = ses_replace(
-        client.get(acquisition_object.parents.session).label)
-    subj_label = subj_replace(
-        client.get(acquisition_object.parents.subject).label)
+    subj_label = subj_replace(client.get(acquisition_object.parents.subject).label)
+    sess_label = ses_replace(client.get(acquisition_object.parents.session).label)
 
     files = [f for f in acquisition_object.files if f.type in ftypes]
     bids_keys = ['sub', 'ses', 'folder', 'name']
-    subj_label = subj_label if subj_label.startswith("sub-") else "sub-" + subj_label
-    sess_label = sess_label if sess_label.startswith("ses-") else "ses-" + sess_label
 
     files.sort(key=operator.itemgetter("name"))
     for fnum, f in enumerate(files):
