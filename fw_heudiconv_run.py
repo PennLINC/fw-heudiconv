@@ -63,7 +63,7 @@ logger.info("Action: {}".format(action))
 logger.info("Dry run: {}".format(dry_run))
 
 # action
-call = "fw-heudiconv-{} --verbose --api-key {} --project {}".format(action.lower(), key, project_label, heuristic)
+call = "fw-heudiconv-{} --verbose --api-key {} --project {}".format(action.lower(), key, project_label.replace(" ", "\ "), heuristic)
 
 if dry_run:
     call  = call + " --dry-run"
