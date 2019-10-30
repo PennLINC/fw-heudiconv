@@ -1,6 +1,6 @@
 #flywheel/fmriprep
 
-FROM python:3
+FROM python:3.5
 MAINTAINER Matt Cieslak <matthew.cieslak@pennmedicine.upenn.edu>
 
 # Make directory for flywheel spec (v0)
@@ -16,7 +16,11 @@ RUN apt-get -y update && apt-get install -y curl
 RUN curl -sL https://deb.nodesource.com/setup_10.x | bash
 RUN apt-get -y update && apt-get install -y zip nodejs
 RUN npm install -g bids-validator
-RUN pip install --no-cache heudiconv nipype flywheel-sdk pandas
+RUN python3 -m pip install --upgrade pip
+RUN pip install --no-cache heudiconv
+RUN pip install --no-cache nipype
+RUN pip install --no-cache flywheel-sdk
+RUN pip install --no-cache pandas
 
 COPY . /src
 
