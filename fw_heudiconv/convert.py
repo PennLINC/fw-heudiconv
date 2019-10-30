@@ -28,6 +28,14 @@ def force_template_format(str_input):
     return(str_input)
 
 
+def force_label_format(str_input):
+
+    str_input = re.sub("ses-", "", str_input)
+    str_input = re.sub("sub-", "", str_input)
+
+    return(str_input)
+
+
 def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[],
                     metadata_extras={}, subj_replace=None, ses_replace=None, item_num=1):
     """ Apply heuristic to rename files
@@ -51,8 +59,8 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
     ses_replace = none_replace if ses_replace is None else ses_replace
 
     acquisition_object = client.get(acquisition_id)
-    subj_label = subj_replace(client.get(acquisition_object.parents.subject).label)
-    sess_label = ses_replace(client.get(acquisition_object.parents.session).label)
+    subj_label = subj_replace(force_label_format(client.get(acquisition_object.parents.subject).label))
+    sess_label = ses_replace(force_label_format(client.get(acquisition_object.parents.session).label))
 
     files = [f for f in acquisition_object.files if f.type in ftypes]
     bids_keys = ['sub', 'ses', 'folder', 'name']
@@ -85,8 +93,12 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
             acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
 
         if intended_for and (f.name.endswith(".nii.gz") or f.name.endswith(".nii")):
-            intendeds = [intend.format(subject=subj_label, session=sess_label)
+
+            intendeds = [force_template_format(intend)
                          for intend in intended_for]
+            intendeds = [intend.format(subject=subj_label, session=sess_label)
+                         for intend in intendeds]
+
             logger.debug("%s IntendedFor: %s", pprint.pformat(new_bids['Filename']), pprint.pformat(intendeds))
             if not dry_run:
                 acquisition_object.update_file_info(f.name, {'IntendedFor': intendeds})
