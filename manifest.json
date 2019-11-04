@@ -2,7 +2,7 @@
 	"name": "fw-heudiconv",
 	"label": "Flywheel HeuDiConv",
 	"description": "HeuDiConv-style BIDS curation on Flywheel. Flywheel HeuDiConv (or fw-heudiconv, pronounced /fwuː di kɑː n(v)/) is a Python-based toolkit that leverages the flexibility and comprehensiveness of HeuDiConv to curate neuroimaging data on Flywheel into a BIDS-valid format.",
-	"version": "0.2.4_0.1.2",
+	"version": "0.2.4_0.1.4",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"
@@ -51,7 +51,7 @@
 	"custom": {
 		"gear-builder": {
 			"category": "analysis",
-			"image": "pennbbl/fw-heudiconv:0.2.4_0.1.2"
+			"image": "pennbbl/fw-heudiconv:0.2.4_0.1.4"
 		},
 		"flywheel":{"suite": "PennBBL"}
 	}
