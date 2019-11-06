@@ -252,7 +252,7 @@ def confirm_intentions(client, session, dry_run=False):
         bids_folders = [get_nested(f, 'info', 'BIDS', 'Folder') for f in acq_files]
         full_filenames = []
         for folder, filename in zip(bids_folders, bids_filenames):
-            if None in (folder, filename):
+            if None in (folder, filename) or '' in (filename, folder):
                 continue
             full_filenames.append(folder + "/" + filename)
 
@@ -309,7 +309,8 @@ def confirm_intentions(client, session, dry_run=False):
 
 def confirm_bids_namespace(project_obj, dry_run):
 
-    if get_nested(project_obj, 'info', 'BIDS') is None:
+    bids_info = get_nested(project_obj, 'info', 'BIDS')
+    if bids_info in (None, ''):
 
         logger.debug("{} has no BIDS namespace!".format(project_obj.label))
 
