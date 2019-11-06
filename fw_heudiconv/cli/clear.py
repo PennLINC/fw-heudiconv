@@ -13,7 +13,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-clearer')
 
 
-def clear_bids(client, project_label, session_labels=None, subject_labels=None, dry_run=False, file_types = ['.nii', '.bval', '.bvec']):
+def clear_bids(client, project_label, session_labels=None, subject_labels=None, dry_run=False,
+               file_types = ['.nii', '.bval', '.bvec']):
 
     logger.info("Querying Flywheel server...")
 

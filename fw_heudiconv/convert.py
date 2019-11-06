@@ -1,5 +1,6 @@
 import logging
 import re
+import pdb
 import operator
 import pprint
 from .cli.export import get_nested
@@ -86,11 +87,13 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
 
         infer_params_from_filename(new_bids)
 
-        destination = "\n" + f.name + "\n\t" + new_bids['Filename'] + " -> " + new_bids["Path"] + "/" + new_bids['Filename']
+        destination = "\n" + f.name + "\n\t" + new_bids['Filename'] + " -> " \
+            + new_bids["Path"] + "/" + new_bids['Filename']
         logger.debug(destination)
 
         if not dry_run:
             acquisition_object.update_file_info(f.name, {'BIDS': new_bids})
+            acquisition_object = client.get(acquisition_id) # Refresh the acquisition object
 
         if intended_for and (f.name.endswith(".nii.gz") or f.name.endswith(".nii")):
 
@@ -99,9 +102,15 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
             intendeds = [intend.format(subject=subj_label, session=sess_label)
                          for intend in intendeds]
 
-            logger.debug("%s IntendedFor: %s", pprint.pformat(new_bids['Filename']), pprint.pformat(intendeds))
+            logger.debug("%s IntendedFor: %s", pprint.pformat(new_bids['Filename']),
+                         pprint.pformat(intendeds))
             if not dry_run:
                 acquisition_object.update_file_info(f.name, {'IntendedFor': intendeds})
+                acquisition_object = client.get(acquisition_id)
+                # Check that it was applied
+                file_info = acquisition_object.get_file(f.name)
+                assert file_info['info']['IntendedFor'] == intendeds
+                logger.debug("Applied!")
 
         if metadata_extras:
             logger.debug("%s metadata: %s", f.name, metadata_extras)
@@ -234,55 +243,64 @@ def infer_params_from_filename(bdict):
 
 
 def confirm_intentions(client, session, dry_run=False):
-
+    """Ensure that files in "IntededFor" will ultimately exist in the BIDS directory.
+    """
     try:
         acqs = [client.get(s.id) for s in session.acquisitions()]
         acq_files = [f for a in acqs for f in a.files if '.nii' in f.name]
         bids_filenames = [get_nested(f, 'info', 'BIDS', 'Filename') for f in acq_files]
         bids_folders = [get_nested(f, 'info', 'BIDS', 'Folder') for f in acq_files]
-        l = list(zip(bids_folders, bids_filenames))
         full_filenames = []
-        for x in l:
-            if None in x:
-                pass
-            else:
-                full_filenames.append("/".join(x))
+        for folder, filename in zip(bids_folders, bids_filenames):
+            if None in (folder, filename):
+                continue
+            full_filenames.append(folder + "/" + filename)
 
         ses_labs = []
         sub_labs = []
+        for full_filename in full_filenames:
+            if full_filename is not None:
 
-        for x in full_filenames:
-            if x is not None:
-
-                ses_search = re.search(r"ses-[a-zA-z0-9]+(?=_)", x)
-                sub_search = re.search(r"sub-[a-zA-z0-9]+(?=_)", x)
+                ses_search = re.search(r"ses-[a-zA-z0-9]+(?=_)", full_filename)
+                sub_search = re.search(r"sub-[a-zA-z0-9]+(?=_)", full_filename)
 
                 if ses_search:
                     ses_labs.append(ses_search.group())
                 if sub_search:
-                    sub_labs.append(ses_search.group())
+                    sub_labs.append(sub_search.group())
 
-        l2 = list(zip(sub_labs, ses_labs, full_filenames))
+        bids_files = ["/".join(parts) for parts in zip(ses_labs, full_filenames)
+                      if None not in parts]
 
-        paths = []
-        for x in l2:
-            if not(None in x):
-                paths.append("/".join(x))
+        # Go through all the acquisitions in the session
+        for acq in acqs:
+            for acq_file in acq.files:
+                if not acq_file.type == 'nifti':
+                    continue
+                intendeds = get_nested(acq_file.to_dict(), 'info', 'IntendedFor')
+                if not intendeds:
+                    continue
+                # If there are "IntendedFor" values, check that they will exist
+                logger.debug(
+                    "Ensuring all intentions apply for acquisition %s: %s",
+                    acq.label, acq_file.name)
 
-        for a in acqs:
-            for x in a.files:
-                if x.type == 'nifti':
+                ok_intentions = []
+                bad_intentions = []
+                for intendedfor in intendeds:
+                    if intendedfor in bids_files:
+                        ok_intentions.append(intendedfor)
+                    else:
+                        bad_intentions.append(intendedfor)
 
-                    intendeds = get_nested(x.to_dict(), 'info', 'IntendedFor')
-
-                    if intendeds:
-                        if not all([i in paths for i in intendeds]):
-                            logger.debug("Ensuring all intentions apply for acquisition %s: %s", a.label, x.name)
-                            exists = [i for i in intendeds if i in paths]
-                            missing = [i for i in intendeds if i not in paths]
-                            logger.debug("Missing paths: %s" % missing)
-                            if not dry_run:
-                                a.update_file_info(x.name, {'IntendedFor': exists})
+                if bad_intentions:
+                    logger.warning(
+                        "IntendedFor values do not point to a BIDS file: %s",
+                        bad_intentions)
+                    # pdb.set_trace()
+                if not dry_run:
+                    acq.update_file_info(acq_file.name,
+                                         {'IntendedFor': ok_intentions})
 
     except Exception as e:
         logger.warning("Trouble updating intentions for this session %s", session.label)

@@ -104,8 +104,8 @@ def session_to_seq_info(client, session, context):
     seq_info = collections.OrderedDict()
     context['total'] = 0
     acquisitions = session.acquisitions()
-    sorted_acquisitions = sorted(acquisitions, key=lambda x: x.timestamp or '')
-    for acquisition in sorted_acquisitions:
+    #sorted_acquisitions = sorted(acquisitions, key=lambda x: x.timestamp or '')
+    for acquisition in acquisitions:
         acquisition = client.get(acquisition.id)
         context['acquisition'] = acquisition
 
