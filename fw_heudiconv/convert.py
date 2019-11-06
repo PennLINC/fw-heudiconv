@@ -297,7 +297,7 @@ def confirm_intentions(client, session, dry_run=False):
                     logger.warning(
                         "IntendedFor values do not point to a BIDS file: %s",
                         bad_intentions)
-                    pdb.set_trace()
+                    # pdb.set_trace()
                 if not dry_run:
                     acq.update_file_info(acq_file.name,
                                          {'IntendedFor': ok_intentions})
