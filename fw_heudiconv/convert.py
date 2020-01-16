@@ -249,28 +249,14 @@ def confirm_intentions(client, session, dry_run=False):
         acqs = [client.get(s.id) for s in session.acquisitions()]
         acq_files = [f for a in acqs for f in a.files if '.nii' in f.name]
         bids_filenames = [get_nested(f, 'info', 'BIDS', 'Filename') for f in acq_files]
-        bids_folders = [get_nested(f, 'info', 'BIDS', 'Folder') for f in acq_files]
+        bids_paths = [get_nested(f, 'info', 'BIDS', 'Path') for f in acq_files]
         full_filenames = []
-        for folder, filename in zip(bids_folders, bids_filenames):
+        for folder, filename in zip(bids_paths, bids_filenames):
             if None in (folder, filename) or '' in (filename, folder):
                 continue
             full_filenames.append(folder + "/" + filename)
 
-        ses_labs = []
-        sub_labs = []
-        for full_filename in full_filenames:
-            if full_filename is not None:
-
-                ses_search = re.search(r"ses-[a-zA-z0-9]+(?=_)", full_filename)
-                sub_search = re.search(r"sub-[a-zA-z0-9]+(?=_)", full_filename)
-
-                if ses_search:
-                    ses_labs.append(ses_search.group())
-                if sub_search:
-                    sub_labs.append(sub_search.group())
-
-        bids_files = ["/".join(parts) for parts in zip(ses_labs, full_filenames)
-                      if None not in parts]
+        bids_files = [re.sub("sub-[a-zA-z0-9]+/", "", x) for x in full_filenames]
 
         # Go through all the acquisitions in the session
         for acq in acqs:

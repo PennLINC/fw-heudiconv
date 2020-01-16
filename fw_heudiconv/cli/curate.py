@@ -83,13 +83,14 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     num_sessions = len(sessions)
     for sesnum, session in enumerate(sessions):
         # Find SeqInfos to apply the heuristic to
+        logger.info("Applying heuristic to %s (%d/%d)...", session.label, sesnum+1,
+                    num_sessions)
+
         seq_infos = get_seq_info(client, project_label, [session])
         logger.debug(
             "Found SeqInfos:\n%s",
             "\n\t".join([pretty_string_seqinfo(seq) for seq in seq_infos]))
 
-        logger.info("Applying heuristic to %s (%d/%d)...", session.label, sesnum+1,
-                    num_sessions)
         to_rename = heuristic.infotodict(seq_infos)
 
         if not to_rename:
@@ -133,6 +134,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
                                 seqitem+1)
 
         confirm_intentions(client, session, dry_run)
+        print("\n")
 
 
 def get_parser():
