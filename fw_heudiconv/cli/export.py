@@ -9,7 +9,7 @@ import re
 import csv
 import pandas as pd
 from pathlib import Path
-from ..query import print_directory_tree
+from fw_heudiconv.backend_funcs.query import print_directory_tree
 
 
 logging.basicConfig(level=logging.INFO)

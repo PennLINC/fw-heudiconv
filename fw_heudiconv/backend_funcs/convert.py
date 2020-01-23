@@ -3,7 +3,7 @@ import re
 import pdb
 import operator
 import pprint
-from .cli.export import get_nested
+from fw_heudiconv.cli.export import get_nested
 
 logger = logging.getLogger('fw-heudiconv-curator')
 

@@ -6,8 +6,8 @@ import warnings
 import flywheel
 import pprint
 from collections import defaultdict
-from ..convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
-from ..query import get_seq_info
+from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
+from fw_heudiconv.backend_funcs.query import get_seq_info
 from heudiconv import utils
 import logging
 

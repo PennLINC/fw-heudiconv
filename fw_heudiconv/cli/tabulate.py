@@ -3,7 +3,7 @@ import warnings
 import logging
 import flywheel
 import pandas as pd
-from ..query import get_seq_info
+from fw_heudiconv.backend_funcs.query import get_seq_info
 
 
 logging.basicConfig(level=logging.INFO)
