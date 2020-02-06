@@ -124,6 +124,10 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     if session_labels:
         sessions = [s for s in sessions if s.label in session_labels]
     assert sessions, "No sessions found!"
+
+    if subject_labels or session_labels:
+        logger.info("Found {} sessions...".format(str(len(sessions))))
+
     for ses in sessions:
         for sf in ses.files:
             d = {

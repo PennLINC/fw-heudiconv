@@ -55,7 +55,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         if os.path.isfile(heuristic_path):
             heuristic = utils.load_heuristic(heuristic_path)
         else:
-            heuristic = importlib.import_module('heudiconv.heuristics.{}'.format(heuristic_path))
+            heuristic = importlib.import_module('fw_heudiconv.example_heuristics.{}'.format(heuristic_path))
     except ModuleNotFoundError as e:
         logger.error("Couldn't load the specified heuristic file!")
         logger.error(e)
