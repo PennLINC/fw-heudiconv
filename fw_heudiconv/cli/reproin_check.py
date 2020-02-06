@@ -27,8 +27,8 @@ def get_parser():
         description="Inspect reproin naming protocols")
 
     parser.add_argument(
-        "--input-path",
-        help="Path to a text file containing reproin names",
+        "--protocol-names",
+        help="Path to a text file containing reproin-compliant protocol names",
         required=True,
         type=str
     )
@@ -48,8 +48,8 @@ def main():
     args = parser.parse_args()
 
     try:
-        if os.path.isfile(args.input_path):
-            with open(args.input_path) as f:
+        if os.path.isfile(args.protocol_names):
+            with open(args.protocol_names) as f:
                 names = f.read().splitlines()
 
         else:
