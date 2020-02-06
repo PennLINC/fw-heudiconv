@@ -10,9 +10,17 @@ logger = logging.getLogger('fw-heudiconv-reproin')
 
 
 def check(string):
-
     
-    return False
+    assert isinstance(string, str), "Input is not a string!"
+    
+    result = re.search(r'^((anat)|(func)|(fmap)|(dwi))-[a-zA-Z0-9]+(_ses-[a-zA-Z0-9]+)?(_task-[a-zA-Z0-9
+]+)?(_acq-[a-zA-Z0-9]+)?(_ce-[a-zA-Z0-9]+)?(_dir-[a-zA-Z0-9]+)?(_rec-[a-zA-Z0-9]+)?(_run-[a-zA-Z0-9]+)?', st
+ring)
+    
+    if result:
+        return True
+    else:
+        return False
 
 
 def get_parser():
