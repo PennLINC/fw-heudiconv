@@ -63,29 +63,33 @@ logger.info("Action: {}".format(action))
 logger.info("Dry run: {}".format(dry_run))
 
 # action
-call = "fw-heudiconv-{} --verbose --api-key {} --project {}".format(action.lower(), key, project_label.replace(" ", "\ "), heuristic)
+call = "fw-heudiconv-{} --verbose --api-key {} --project {}".format(action.lower(), key, project_label.replace(" ", "\ "))
 
 if dry_run:
     call  = call + " --dry-run"
 
-if heuristic and action.lower() == "curate":
-    call = call + " --heuristic {}".format(heuristic)
 if subjects:
     call = call + " --subject {}".format(" ".join(subjects))
 if sessions:
     call = call + " --session {}".format(" ".join(sessions))
 
-if action.lower() == "export":
+if heuristic and action.lower() == "curate":
+    call = call + " --heuristic {}".format(heuristic)
+
+elif action.lower() == "export":
     call = call + " --destination {}".format("/flywheel/v0/output")
 
-if action.lower() == "meta":
+elif action.lower() == "meta":
     call = call + " --autogen-participants-meta --autogen-sessions-meta"
 
-if action.lower() == "validate":
+elif action.lower() == "validate":
     call = call + " --flywheel --directory {}".format("/flywheel/v0/output")
 
-if action.lower() == "tabulate":
+elif action.lower() == "tabulate":
     call = call + " --path {}".format("/flywheel/v0/output")
+
+elif action.lower() == "reproin":
+    call = call + " --protocol-names {}".format(heuristic)
 
 os.system(call)
 

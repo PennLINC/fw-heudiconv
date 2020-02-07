@@ -5,6 +5,7 @@ import flywheel
 import os
 import pprint
 import re
+import sys
 from fw_heudiconv.example_heuristics.reproin_Upenn import parse_protocol
 
 logging.basicConfig(level=logging.INFO)
@@ -51,13 +52,37 @@ def get_parser():
     )
     parser.add_argument(
         "--api-key",
-        help="API Key",
+        help=argparse.SUPPRESS,
         action='store',
+        default=None
+    )
+    parser.add_argument(
+        "--project",
+        help=argparse.SUPPRESS,
+        action='store',
+        default=None
+    )
+    parser.add_argument(
+        "--subject",
+        help=argparse.SUPPRESS,
+        nargs="+",
+        default=None
+    )
+    parser.add_argument(
+        "--session",
+        help=argparse.SUPPRESS,
+        nargs="+",
         default=None
     )
     parser.add_argument(
         "--verbose",
         help="Print ongoing messages of progress",
+        action='store_true',
+        default=False
+    )
+    parser.add_argument(
+        "--dry-run",
+        help=argparse.SUPPRESS,
         action='store_true',
         default=False
     )
