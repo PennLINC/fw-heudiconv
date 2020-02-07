@@ -46,7 +46,7 @@ def tabulate_bids(client, project_label, path=".", subject_labels=None,
     df = pd.DataFrame.from_dict(seq_info_dicts)
 
     if unique:
-        df = df.drop_duplicates(subset=['TR', 'TE', 'protocol_name', 'is_motion_corrected', 'is_derived'])
+        df = df.drop_duplicates(subset=['TR', 'TE', 'protocol_name', 'is_motion_corrected', 'is_derived', 'series_description'])
         df = df.drop(['total_files_till_now', 'dcm_dir_name'], 1)
 
     return df
