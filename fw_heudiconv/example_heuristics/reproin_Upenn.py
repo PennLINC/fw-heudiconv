@@ -56,3 +56,5 @@ def infotodict(seqinfo):
             info[key].append(s.series_id)
         else:
             info[key] = [s.series_id]
+
+    return info
