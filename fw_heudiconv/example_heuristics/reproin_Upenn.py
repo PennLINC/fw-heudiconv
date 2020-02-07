@@ -1,18 +1,20 @@
 ORDERED_BIDS_FIELDS = [
-  'ses', 'task', 'acq', 'ce', 'dir', 'rec', 'run'
+  'task', 'acq', 'ce', 'dir', 'rec', 'run'
 ]
 
 
 def parse_protocol(protocol_name):
 
-    print(protocol_name)
+    #print(protocol_name)
 
+    if ":" in protocol_name:
+        protocol_name = protocol_name[protocol_name.index(":"):]
     if "__" in protocol_name:
         protocol_name = protocol_name[:protocol_name.index("__")]
 
     parts = protocol_name.split("_")
 
-    print(parts)
+    #print(parts)
 
     directory, suffix = parts.pop(0).split("-")
     bids_name = directory + "/{subject}"

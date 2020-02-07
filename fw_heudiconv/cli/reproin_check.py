@@ -4,18 +4,35 @@ import logging
 import flywheel
 import os
 import pprint
+import re
+from fw_heudiconv.example_heuristics.reproin_Upenn import parse_protocol
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-reproin')
 
 
-def check(string):
-    
+def check(string, verbose):
+
     assert isinstance(string, str), "Input is not a string!"
-    
-    result = re.search(r'^((anat)|(func)|(fmap)|(dwi))-[a-zA-Z0-9]+(_ses-[a-zA-Z0-9]+)?(_task-[a-zA-Z0-9]+)?(_acq-[a-zA-Z0-9]+)?(_ce-[a-zA-Z0-9]+)?(_dir-[a-zA-Z0-9]+)?(_rec-[a-zA-Z0-9]+)?(_run-[a-zA-Z0-9]+)?', string)
-    
+
+    result = re.search(
+        r'^([A-Z]+:)?' # PREFIX
+        '((anat)|(func)|(fmap)|(dwi))-([a-zA-Z0-9]+){1}' # Seqtype & label
+        '(_ses-[a-zA-Z0-9]+)?' # optional session
+        '(_task-[a-zA-Z0-9]+)?' # task
+        '(_acq-[a-zA-Z0-9]+)?' # acquisition
+        '(_ce-[a-zA-Z0-9]+)?' # contrast
+        '(_dir-[a-zA-Z0-9]+)?' # directionality
+        '(_rec-[a-zA-Z0-9]+)?' # reconstruction
+        '(_run-[a-zA-Z0-9]+)?' # runs
+        '(__.*)$', # dunder and custom info
+        string)
+
     if result:
+
+        if verbose:
+            print(string + "\n\t -> " + parse_protocol(string) + "\n")
+
         return True
     else:
         return False
@@ -37,6 +54,12 @@ def get_parser():
         help="API Key",
         action='store',
         default=None
+    )
+    parser.add_argument(
+        "--verbose",
+        help="Print ongoing messages of progress",
+        action='store_true',
+        default=False
     )
     return parser
 
@@ -63,7 +86,7 @@ def main():
 
     for name in names:
 
-        check_results[name] = check(name)
+        check_results[name] = check(name, args.verbose)
 
     if all(list(check_results.values())):
 
