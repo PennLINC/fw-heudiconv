@@ -9,7 +9,7 @@ import re
 import csv
 import pandas as pd
 from pathlib import Path
-from ..query import print_directory_tree
+from fw_heudiconv.backend_funcs.query import print_directory_tree
 
 
 logging.basicConfig(level=logging.INFO)
@@ -124,6 +124,10 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
     if session_labels:
         sessions = [s for s in sessions if s.label in session_labels]
     assert sessions, "No sessions found!"
+
+    if subject_labels or session_labels:
+        logger.info("Found {} sessions...".format(str(len(sessions))))
+
     for ses in sessions:
         for sf in ses.files:
             d = {

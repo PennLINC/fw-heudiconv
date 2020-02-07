@@ -3,7 +3,7 @@ import re
 import pdb
 import operator
 import pprint
-from .cli.export import get_nested
+from fw_heudiconv.cli.export import get_nested
 
 logger = logging.getLogger('fw-heudiconv-curator')
 
@@ -23,6 +23,16 @@ def none_replace(str_input):
 
 def force_template_format(str_input):
 
+    # if we get a reproin heuristic, the str format is:
+    #
+    # {bids_subject_session_dir}/anat/{bids_subject_session_prefix}_scout
+    #
+    # here we replace the {} with the sub-sess format fw-heudiconv uses
+
+    str_input = re.sub("{bids_subject_session_dir}", "sub-{subject}/ses-{session}", str_input)
+    str_input = re.sub("{bids_subject_session_prefix}", "sub-{subject}_ses-{session}", str_input)
+
+    # next, we remove extra sub-sub or ses-ses
     str_input = re.sub("(?<!ses-){session}", "ses-{session}", str_input)
     str_input = re.sub("(?<!sub-){subject}", "sub-{subject}", str_input)
 

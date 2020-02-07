@@ -8,7 +8,7 @@ import re
 import pandas as pd
 import shutil
 from pathlib import Path
-from ..convert import get_nested
+from fw_heudiconv.backend_funcs.convert import get_nested
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-curator')
