@@ -3,6 +3,12 @@ ORDERED_BIDS_FIELDS = [
 ]
 
 
+def create_key(template, outtype=('nii.gz',), annotation_classes=None):
+    if template is None or not template:
+        raise ValueError('Template must be a valid format string')
+    return template, outtype, annotation_classes
+
+
 def parse_protocol(protocol_name):
 
     #print(protocol_name)
@@ -13,10 +19,13 @@ def parse_protocol(protocol_name):
         protocol_name = protocol_name[:protocol_name.index("__")]
 
     parts = protocol_name.split("_")
+    directory_suffix = parts.pop(0)
 
-    #print(parts)
+    if "-" not in directory_suffix:
+        print("Couldn't find the seqtype and label in", protocol_name)
+        return ""
 
-    directory, suffix = parts.pop(0).split("-")
+    directory, suffix = directory_suffix.split("-")
     bids_name = directory + "/{subject}"
     field_lookup = { key: value for key,value in [part.split("-") for part in parts]}
     if 'ses' in field_lookup:
@@ -29,7 +38,7 @@ def parse_protocol(protocol_name):
         if bids_key in field_lookup:
             bids_name += '_%s-%s' % (bids_key, field_lookup[bids_key])
     bids_name += "_" + suffix
-    #print(bids_name)
+    bids_name = "{subject}/{session}/" + bids_name
     return bids_name
 
 
@@ -49,8 +58,12 @@ def infotodict(seqinfo):
 
     for s in seqinfo:
 
-        key = parse_protocol(s.series_description)
-        print(key)
+        template = parse_protocol(s.series_description)
+
+        if template == '':
+            continue
+        else:
+            key = create_key(template)
 
         if key in info.keys():
             info[key].append(s.series_id)
