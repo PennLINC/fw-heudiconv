@@ -145,5 +145,5 @@ IntendedFor = {
     '{session}/func/sub-{subject}_{session}_task-verbgen_run-02_bold.nii.gz',
     '{session}/func/sub-{subject}_{session}_task-rest_bold.nii.gz'],
 
-    m0: [ 'sub-{subject}/{session}/asl/sub-{subject}_{session}_asl.nii.gz' ],
+    m0: [ '{session}/asl/sub-{subject}_{session}_asl.nii.gz' ],
 }
