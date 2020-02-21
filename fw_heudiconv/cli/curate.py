@@ -6,8 +6,8 @@ import warnings
 import flywheel
 import pprint
 from collections import defaultdict
-from ..convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
-from ..query import get_seq_info
+from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
+from fw_heudiconv.backend_funcs.query import get_seq_info
 from heudiconv import utils
 import logging
 
@@ -49,8 +49,21 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
         dry_run (bool): Print the changes, don't apply them on flywheel
     """
 
+    # Make sure we can find the heuristic
+    logger.info("Loading heuristic file...")
+    try:
+        if os.path.isfile(heuristic_path):
+            heuristic = utils.load_heuristic(heuristic_path)
+        else:
+            heuristic = importlib.import_module('fw_heudiconv.example_heuristics.{}'.format(heuristic_path))
+    except ModuleNotFoundError as e:
+        logger.error("Couldn't load the specified heuristic file!")
+        logger.error(e)
+        sys.exit(1)
+
     if dry_run:
         logger.setLevel(logging.DEBUG)
+
     logger.info("Querying Flywheel server...")
     project_obj = client.projects.find_first('label="{}"'.format(project_label))
     assert project_obj, "Project not found! Maybe check spelling...?"
@@ -67,65 +80,61 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     logger.debug('Found sessions:\n\t%s',
                  "\n\t".join(['%s (%s)' % (ses['label'], ses.id) for ses in sessions]))
 
-    # Find SeqInfos to apply the heuristic to
-    seq_infos = get_seq_info(client, project_label, sessions)
-    logger.debug(
-        "Found SeqInfos:\n%s",
-        "\n\t".join([pretty_string_seqinfo(seq) for seq in seq_infos]))
+    num_sessions = len(sessions)
+    for sesnum, session in enumerate(sessions):
+        # Find SeqInfos to apply the heuristic to
+        logger.info("Applying heuristic to %s (%d/%d)...", session.label, sesnum+1,
+                    num_sessions)
 
-    logger.info("Loading heuristic file...")
-    try:
-        if os.path.isfile(heuristic_path):
-            heuristic = utils.load_heuristic(heuristic_path)
+        seq_infos = get_seq_info(client, project_label, [session])
+        logger.debug(
+            "Found SeqInfos:\n%s",
+            "\n\t".join([pretty_string_seqinfo(seq) for seq in seq_infos]))
+
+        to_rename = heuristic.infotodict(seq_infos)
+
+        if not to_rename:
+            logger.debug("No changes to apply!")
+            continue
+
+        intention_map = defaultdict(list)
+        if hasattr(heuristic, "IntendedFor"):
+            logger.info("Processing IntendedFor fields based on heuristic file")
+            intention_map.update(heuristic.IntendedFor)
+            logger.debug("Intention map: %s",
+                         pprint.pformat(
+                             [(k[0], v) for k, v in dict(intention_map).items()]))
+
+        metadata_extras = defaultdict(list)
+        if hasattr(heuristic, "MetadataExtras"):
+            logger.info("Processing Medatata fields based on heuristic file")
+            metadata_extras.update(heuristic.MetadataExtras)
+            logger.debug("Metadata extras: %s", metadata_extras)
+
+        if not dry_run:
+            logger.info("Applying changes to files...")
+
+        if hasattr(heuristic, "ReplaceSubject"):
+            subject_rename = heuristic.ReplaceSubject
         else:
-            heuristic = importlib.import_module('heudiconv.heuristics.{}'.format(heuristic_path))
-    except ModuleNotFoundError as e:
-        logger.error("Couldn't load the specified heuristic file!")
-        logger.error(e)
-        sys.exit(1)
+            subject_rename = None
+        if hasattr(heuristic, "ReplaceSession"):
+            session_rename = heuristic.ReplaceSession
+        else:
+            session_rename = None
 
-    logger.info("Applying heuristic to query results...")
-    to_rename = heuristic.infotodict(seq_infos)
+        for key, val in to_rename.items():
 
-    if not to_rename:
-        logger.debug("No changes to apply!")
-        sys.exit(1)
-
-    intention_map = defaultdict(list)
-    if hasattr(heuristic, "IntendedFor"):
-        logger.info("Processing IntendedFor fields based on heuristic file")
-        intention_map.update(heuristic.IntendedFor)
-        logger.debug("Intention map: %s", pprint.pformat([(k[0], v) for k, v in dict(intention_map).items()]))
-
-    metadata_extras = defaultdict(list)
-    if hasattr(heuristic, "MetadataExtras"):
-        logger.info("Processing Medatata fields based on heuristic file")
-        metadata_extras.update(heuristic.MetadataExtras)
-        logger.debug("Metadata extras: %s", metadata_extras)
-
-    if not dry_run:
-        logger.info("Applying changes to files...")
-
-    if hasattr(heuristic, "ReplaceSubject"):
-        subject_rename = heuristic.ReplaceSubject
-    else:
-        subject_rename = None
-    if hasattr(heuristic, "ReplaceSession"):
-        session_rename = heuristic.ReplaceSession
-    else:
-        session_rename = None
-
-    for key, val in to_rename.items():
-
-        # assert val is list
-        if not isinstance(val, set):
+            # assert val is list
+            if not isinstance(val, set):
                 val = set(val)
-        for seqitem, value in enumerate(val):
-            apply_heuristic(client, key, value, dry_run, intention_map[key],
-                            metadata_extras[key], subject_rename, session_rename, seqitem+1)
+            for seqitem, value in enumerate(val):
+                apply_heuristic(client, key, value, dry_run, intention_map[key],
+                                metadata_extras[key], subject_rename, session_rename,
+                                seqitem+1)
 
-    for ses in sessions:
-        confirm_intentions(client, ses, dry_run)
+        confirm_intentions(client, session, dry_run)
+        print("\n")
 
 
 def get_parser():

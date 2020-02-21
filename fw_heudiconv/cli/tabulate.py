@@ -3,7 +3,7 @@ import warnings
 import logging
 import flywheel
 import pandas as pd
-from ..query import get_seq_info
+from fw_heudiconv.backend_funcs.query import get_seq_info
 
 
 logging.basicConfig(level=logging.INFO)
@@ -44,9 +44,16 @@ def tabulate_bids(client, project_label, path=".", subject_labels=None,
     seq_infos = get_seq_info(client, project_label, sessions)
     seq_info_dicts = [seq._asdict() for seq in seq_infos]
     df = pd.DataFrame.from_dict(seq_info_dicts)
+
     if unique:
-        df = df.drop_duplicates(subset=['TR', 'TE', 'protocol_name', 'is_motion_corrected', 'is_derived'])
-        df = df.drop(columns=['total_files_till_now', 'dcm_dir_name'])
+        df = df.drop_duplicates(subset=['TR', 'TE', 'protocol_name', 'is_motion_corrected', 'is_derived', 'series_description'])
+        df = df.drop(['total_files_till_now', 'dcm_dir_name'], 1)
+
+    return df
+
+
+def output_result(df, path, project_label, dry_run):
+
     if dry_run:
         print(df)
     else:
@@ -134,13 +141,15 @@ def main():
     if args.verbose or args.dry_run:
         logger.setLevel(logging.DEBUG)
 
-    tabulate_bids(client=fw,
+    result = tabulate_bids(client=fw,
                   project_label=args.project,
                   path=args.path,
                   session_labels=args.session,
                   subject_labels=args.subject,
                   dry_run=args.dry_run,
                   unique=args.unique)
+
+    output_result(result, path=args.path, project_label=args.project, dry_run=args.dry_run)
 
     logger.info("Done!")
     logger.info("{:=^70}".format(": Exiting fw-heudiconv tabulator :"))

@@ -3,7 +3,7 @@ import re
 import pdb
 import operator
 import pprint
-from .cli.export import get_nested
+from fw_heudiconv.cli.export import get_nested
 
 logger = logging.getLogger('fw-heudiconv-curator')
 
@@ -23,6 +23,16 @@ def none_replace(str_input):
 
 def force_template_format(str_input):
 
+    # if we get a reproin heuristic, the str format is:
+    #
+    # {bids_subject_session_dir}/anat/{bids_subject_session_prefix}_scout
+    #
+    # here we replace the {} with the sub-sess format fw-heudiconv uses
+
+    str_input = re.sub("{bids_subject_session_dir}", "sub-{subject}/ses-{session}", str_input)
+    str_input = re.sub("{bids_subject_session_prefix}", "sub-{subject}_ses-{session}", str_input)
+
+    # next, we remove extra sub-sub or ses-ses
     str_input = re.sub("(?<!ses-){session}", "ses-{session}", str_input)
     str_input = re.sub("(?<!sub-){subject}", "sub-{subject}", str_input)
 
@@ -249,28 +259,14 @@ def confirm_intentions(client, session, dry_run=False):
         acqs = [client.get(s.id) for s in session.acquisitions()]
         acq_files = [f for a in acqs for f in a.files if '.nii' in f.name]
         bids_filenames = [get_nested(f, 'info', 'BIDS', 'Filename') for f in acq_files]
-        bids_folders = [get_nested(f, 'info', 'BIDS', 'Folder') for f in acq_files]
+        bids_paths = [get_nested(f, 'info', 'BIDS', 'Path') for f in acq_files]
         full_filenames = []
-        for folder, filename in zip(bids_folders, bids_filenames):
-            if None in (folder, filename):
+        for folder, filename in zip(bids_paths, bids_filenames):
+            if None in (folder, filename) or '' in (filename, folder):
                 continue
             full_filenames.append(folder + "/" + filename)
 
-        ses_labs = []
-        sub_labs = []
-        for full_filename in full_filenames:
-            if full_filename is not None:
-
-                ses_search = re.search(r"ses-[a-zA-z0-9]+(?=_)", full_filename)
-                sub_search = re.search(r"sub-[a-zA-z0-9]+(?=_)", full_filename)
-
-                if ses_search:
-                    ses_labs.append(ses_search.group())
-                if sub_search:
-                    sub_labs.append(sub_search.group())
-
-        bids_files = ["/".join(parts) for parts in zip(ses_labs, full_filenames)
-                      if None not in parts]
+        bids_files = [re.sub("sub-[a-zA-z0-9]+/", "", x) for x in full_filenames]
 
         # Go through all the acquisitions in the session
         for acq in acqs:
@@ -297,7 +293,7 @@ def confirm_intentions(client, session, dry_run=False):
                     logger.warning(
                         "IntendedFor values do not point to a BIDS file: %s",
                         bad_intentions)
-                    pdb.set_trace()
+                    # pdb.set_trace()
                 if not dry_run:
                     acq.update_file_info(acq_file.name,
                                          {'IntendedFor': ok_intentions})
@@ -309,7 +305,8 @@ def confirm_intentions(client, session, dry_run=False):
 
 def confirm_bids_namespace(project_obj, dry_run):
 
-    if get_nested(project_obj, 'info', 'BIDS') is None:
+    bids_info = get_nested(project_obj, 'info', 'BIDS')
+    if bids_info in (None, ''):
 
         logger.debug("{} has no BIDS namespace!".format(project_obj.label))
 

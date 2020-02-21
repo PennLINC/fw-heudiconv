@@ -100,6 +100,12 @@ def get_parser():
         action='store',
         default=None
     )
+    parser.add_argument(
+        "--dry-run",
+        help=argparse.SUPPRESS,
+        action='store',
+        default=None
+    )
     return parser
 
 
