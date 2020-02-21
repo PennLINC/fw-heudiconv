@@ -15,6 +15,33 @@ logger = logging.getLogger('fw-heudiconv-reproin')
 def check(string, verbose):
     '''
     https://regex101.com/r/w0SRcs/1/
+
+    Examples:
+    =========
+    >>> from fw_heudiconv.testing.data import *
+    >>> strings = create_reproin_test_strings()
+    >>> for s in strings:
+    ...     check(s, True)
+    ... # doctest: +NORMALIZE_WHITESPACE
+    anat-localizer
+        -> {subject}/{session}/anat/{subject}_{session}_localizer
+    <BLANKLINE>
+    True
+    anat-AAHScout
+        -> {subject}/{session}/anat/{subject}_{session}_AAHScout
+    <BLANKLINE>
+    True
+    False
+    anat-T1w
+        -> {subject}/{session}/anat/{subject}_{session}_T1w
+    <BLANKLINE>
+    True
+    False
+    False
+    False
+    False
+    False
+    False
     '''
     assert isinstance(string, str), "Input is not a string!"
 
