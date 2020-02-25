@@ -41,6 +41,10 @@ def force_template_format(str_input):
 
 def force_label_format(str_input):
 
+    '''
+    Ensures strings don't repeat the format placeholders
+
+    '''
     str_input = re.sub("ses-", "", str_input)
     str_input = re.sub("sub-", "", str_input)
 
