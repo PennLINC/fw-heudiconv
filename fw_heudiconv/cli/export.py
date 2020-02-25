@@ -263,7 +263,7 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
                     Path(sidecar_path).touch()
                 else:
                     acq.download_file(fi['name'], file_path)
-    check_tasks(root_path)
+    #check_tasks(root_path)
 
     logger.info("Done!")
     print_directory_tree(root_path)
