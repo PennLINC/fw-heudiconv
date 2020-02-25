@@ -18,7 +18,7 @@ config = invocation['config']
 inputs = invocation['inputs']
 destination = invocation['destination']
 key = inputs['api_key']['key']
-fw = flywheel.Flywheel(key)
+fw = flywheel.Client(key)
 user = fw.get_current_user()
 
 # start up logic:

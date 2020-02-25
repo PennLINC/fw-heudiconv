@@ -1,7 +1,7 @@
 #flywheel/fmriprep
 
 FROM python:3.7
-MAINTAINER Matt Cieslak <matthew.cieslak@pennmedicine.upenn.edu>
+MAINTAINER Tinashe Tapera <taperat@pennmedicine.upenn.edu>
 
 # Make directory for flywheel spec (v0)
 ENV FLYWHEEL /flywheel/v0
