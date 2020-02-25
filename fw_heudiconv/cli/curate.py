@@ -195,7 +195,7 @@ def main():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         if args.api_key:
-            fw = flywheel.Flywheel(args.api_key)
+            fw = flywheel.Client(args.api_key)
         else:
             fw = flywheel.Client()
     assert fw, "Your Flywheel CLI credentials aren't set!"

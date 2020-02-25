@@ -17,8 +17,8 @@ invocation = json.loads(open('config.json').read())
 config = invocation['config']
 inputs = invocation['inputs']
 destination = invocation['destination']
-key = inputs['api-key']['key']
-fw = flywheel.Flywheel(key)
+key = inputs['api_key']['key']
+fw = flywheel.Client(key)
 user = fw.get_current_user()
 
 # start up logic:
