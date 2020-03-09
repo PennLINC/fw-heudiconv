@@ -103,7 +103,7 @@ def get_parser():
     parser.add_argument(
         "--dry-run",
         help=argparse.SUPPRESS,
-        action='store',
+        action='store_false',
         default=None
     )
     return parser
