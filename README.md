@@ -7,7 +7,7 @@ As a command line tool:
 
 1. Make sure you have the [Flywheel CLI](https://docs.flywheel.io/hc/en-us/articles/360008162214-Installing-the-Command-Line-Interface-CLI-) and [SDK](https://pypi.org/project/flywheel-sdk/) installed. Note that this is `flywheel-sdk` and NOT `flywheel`.
 
-2. Download the package from pip with `pip install fw-heudiconv`, OR [Clone or download this repository](https://github.com/PennBBL/fw-heudiconv) to your machine. Use the flag `--dry_run=True` to test your heuristic.
+2. Download the package from pip with `pip install fw-heudiconv`, OR [Clone or download this repository](https://github.com/PennBBL/fw-heudiconv) to your machine. Use the flag `--dry-run=True` to test your heuristic.
 
 To curate a dataset on Flywheel into BIDS: `fw-heudiconv-curate --project <MY_PROJECT> --heuristic <MY_HEURISTIC_FILE>`
 
