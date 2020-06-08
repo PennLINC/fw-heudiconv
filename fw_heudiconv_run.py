@@ -92,7 +92,7 @@ elif action.lower() == "tabulate":
 elif action.lower() == "reproin":
     call = call + " --protocol-names {}".format(heuristic)
 
-exit = os.system(call)
+exit_status = os.system(call)
 
 if action.lower() in ["export", "tabulate"]:
 
@@ -111,4 +111,7 @@ if action.lower() in ["export", "tabulate"]:
 logger.info("Done!")
 logger.info("{:=^70}\n".format(": Exiting fw-heudiconv gear manager :"))
 
-sys.exit(exit)
+if exit_status > 0:
+    sys.exit(1)
+else:
+    sys.exit(exit)
