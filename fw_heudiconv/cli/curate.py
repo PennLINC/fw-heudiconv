@@ -5,6 +5,8 @@ import argparse
 import warnings
 import flywheel
 import pprint
+import validators
+import requests
 from collections import defaultdict
 from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
 from fw_heudiconv.backend_funcs.query import get_seq_info
@@ -52,14 +54,45 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     # Make sure we can find the heuristic
     logger.info("Loading heuristic file...")
     try:
+
         if os.path.isfile(heuristic_path):
             heuristic = utils.load_heuristic(heuristic_path)
+
+        elif "github" in heuristic_path and validators.url(heuristic_path):
+
+            # read from github
+            try:
+                response = requests.get(heuristic_path)
+
+                if response.ok:
+
+                    name = 'heuristic'
+                    spec = importlib.util.spec_from_loader(name, loader=None)
+
+                    heuristic = importlib.util.module_from_spec(spec)
+
+                    code = response.text
+
+                    exec(code, heuristic.__dict__)
+
+                else:
+
+                    logger.error("Couldn't find a valid URL for this heuristic at:\n\n" + heuristic_path + "\n")
+                    raise ModuleNotFoundError
+
+            except:
+                logger.error("Trouble retrieving the URL!")
+                raise ModuleNotFoundError("Is this a valid URL to a heuristic on Github? Please check spelling!")
+
         else:
             heuristic = importlib.import_module('fw_heudiconv.example_heuristics.{}'.format(heuristic_path))
+
     except ModuleNotFoundError as e:
         logger.error("Couldn't load the specified heuristic file!")
         logger.error(e)
         sys.exit(1)
+
+    logger.info("Heuristic loaded successfully!")
 
     if dry_run:
         logger.setLevel(logging.DEBUG)
