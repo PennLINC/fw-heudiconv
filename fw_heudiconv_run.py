@@ -4,6 +4,7 @@ import flywheel
 import os
 import shutil
 import logging
+import sys
 from fw_heudiconv.cli import export
 
 
@@ -91,7 +92,7 @@ elif action.lower() == "tabulate":
 elif action.lower() == "reproin":
     call = call + " --protocol-names {}".format(heuristic)
 
-os.system(call)
+exit_status = os.system(call)
 
 if action.lower() in ["export", "tabulate"]:
 
@@ -109,3 +110,6 @@ if action.lower() in ["export", "tabulate"]:
 
 logger.info("Done!")
 logger.info("{:=^70}\n".format(": Exiting fw-heudiconv gear manager :"))
+
+if exit_status > 0:
+    raise Exception("There may be errors in the run call. Check the log for more!")
