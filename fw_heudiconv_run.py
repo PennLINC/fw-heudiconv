@@ -112,6 +112,4 @@ logger.info("Done!")
 logger.info("{:=^70}\n".format(": Exiting fw-heudiconv gear manager :"))
 
 if exit_status > 0:
-    sys.exit(1)
-else:
-    sys.exit(exit)
+    raise Exception("There may be errors in the run call. Check the log for more!")

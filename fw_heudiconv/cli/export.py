@@ -235,6 +235,13 @@ def download_bids(client, to_download, root_path, folders_to_download = ['anat',
 
                 download_path = '/'.join([root_path, project_path])
                 file_path = '/'.join([download_path, fname])
+                if Path(file_path).exists():
+                    logger.error("Found conflicting file paths:")
+                    logger.error(file_path)
+                    logger.error("Cleaning up...")
+                    shutil.rmtree(root_path)
+                    raise FileExistsError
+
                 sidecar_path = '/'.join([download_path, sidecar_name])
                 acq = client.get(fi['data'])
 
