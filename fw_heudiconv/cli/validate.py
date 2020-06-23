@@ -30,7 +30,7 @@ def find_all(regex, text):
             return match_list
 
 
-def validate_local(path, verbose, tabulate=True):
+def validate_local(path, verbose, tabulate='.'):
 
     logger.info("Launching bids-validator...")
     command = ['bids-validator', path]
@@ -47,7 +47,7 @@ def validate_local(path, verbose, tabulate=True):
     clean_output = re.sub('\s+',' ', escape_ansi(output))
     issues = find_all(r'\[[A-Z]+\].+?(?=(\[[A-Z]+\]|Summary))', clean_output)
 
-    if issues and tabulate:
+    if issues and os.path.exists(tabulate):
 
         logger.info("Parsing issues and writing to issues.csv")
         issues_tuples = []
@@ -70,7 +70,7 @@ def validate_local(path, verbose, tabulate=True):
         issues_df = pd.DataFrame(issues_tuples, columns=['Type', 'Description', 'Evidence'])
         issues_df_full = issues_df.explode('Evidence')
         logger.info("Writing...")
-        issues_df_full.to_csv('./issues.csv', index=False)
+        issues_df_full.to_csv(tabulate + '/issues.csv', index=False)
 
     return p.returncode
 
@@ -145,9 +145,10 @@ def get_parser():
     )
     parser.add_argument(
         "--tabulate",
-        help="Tabulate errors and save to file for quicker analysis",
-        default=True,
-        action='store_true'
+        default=".",
+        required=False,
+        type=str,
+        help="Directory to save tabulation of errors"
     )
     parser.add_argument(
         "--api-key",
