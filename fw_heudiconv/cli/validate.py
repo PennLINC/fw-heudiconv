@@ -57,7 +57,7 @@ def validate_local(path, verbose, tabulate='.'):
             issue_type = iss[:issue_type_match.end()]
             issue_description = iss[issue_type_match.end():].lstrip()
             issue_evidence = find_all(
-                r'(?<=Evidence: ).+?(?=(Evidence|\[[A-Z]+\]))', issue_description
+                r'(?<=Evidence: ).+?(?=(Evidence|\[[A-Z]+\]|\Z))', issue_description
                 )
             if issue_evidence:
                 evidence_ix = re.search('Evidence', issue_description).start()
