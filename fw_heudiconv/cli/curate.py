@@ -102,6 +102,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     assert project_obj, "Project not found! Maybe check spelling...?"
     logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id)
     project_obj = confirm_bids_namespace(project_obj, dry_run)
+
     sessions = client.get_project_sessions(project_obj.id)
     # filters
     if subject_labels:
@@ -113,8 +114,29 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     logger.debug('Found sessions:\n\t%s',
                  "\n\t".join(['%s (%s)' % (ses['label'], ses.id) for ses in sessions]))
 
+    # try attachments
+    if hasattr(heuristic, "AttachToProject"):
+        logger.info("Processing project attachments based on heuristic file")
+        attach_name, attach_data, attach_type = heuristic.AttachToProject()
+        logger.debug("\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(attach_name, attach_data, attach_type))
+
+        if not dry_run:
+            file_spec = flywheel.FileSpec(attach_name, attach_data, attach_type)
+            project_obj.upload_file(file_spec)
+
+    if hasattr(heuristic, "AttachToSubject"):
+        logger.info("Processing subject attachments based on heuristic file")
+        attach_name, attach_data, attach_type = heuristic.AttachToSubject()
+        logger.debug("\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(attach_name, attach_data, attach_type))
+
+        if not dry_run:
+            subjects = [x.subject for x in sessions]
+            file_spec = flywheel.FileSpec(attach_name, attach_data, attach_type)
+            [sub.upload_file(file_spec) for sub in subjects]
+
     num_sessions = len(sessions)
     for sesnum, session in enumerate(sessions):
+
         # Find SeqInfos to apply the heuristic to
         logger.info("Applying heuristic to %s (%d/%d)...", session.label, sesnum+1,
                     num_sessions)
@@ -124,12 +146,14 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             "Found SeqInfos:\n%s",
             "\n\t".join([pretty_string_seqinfo(seq) for seq in seq_infos]))
 
+        # apply heuristic to seqinfos
         to_rename = heuristic.infotodict(seq_infos)
 
         if not to_rename:
             logger.debug("No changes to apply!")
             continue
 
+        # try intendedfors
         intention_map = defaultdict(list)
         if hasattr(heuristic, "IntendedFor"):
             logger.info("Processing IntendedFor fields based on heuristic file")
@@ -138,15 +162,14 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
                          pprint.pformat(
                              [(k[0], v) for k, v in dict(intention_map).items()]))
 
+        # try metadataextras
         metadata_extras = defaultdict(list)
         if hasattr(heuristic, "MetadataExtras"):
             logger.info("Processing Medatata fields based on heuristic file")
             metadata_extras.update(heuristic.MetadataExtras)
             logger.debug("Metadata extras: %s", metadata_extras)
 
-        if not dry_run:
-            logger.info("Applying changes to files...")
-
+        # try subject/session label functions
         if hasattr(heuristic, "ReplaceSubject"):
             subject_rename = heuristic.ReplaceSubject
         else:
@@ -155,6 +178,20 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             session_rename = heuristic.ReplaceSession
         else:
             session_rename = None
+
+        # try attachments
+        if hasattr(heuristic, "AttachToSession"):
+            logger.info("Processing session attachments based on heuristic file")
+            attach_name, attach_data, attach_type = heuristic.AttachToSession()
+            logger.debug("\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(attach_name, attach_data, attach_type))
+
+            if not dry_run:
+                file_spec = flywheel.FileSpec(attach_name, attach_data, attach_type)
+                session.upload_file(file_spec)
+
+        # final prep
+        if not dry_run:
+            logger.info("Applying changes to files...")
 
         for key, val in to_rename.items():
 
