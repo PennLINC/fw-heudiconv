@@ -8,7 +8,7 @@ import pprint
 import validators
 import requests
 from collections import defaultdict
-from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace, verify_attachment, none_replace, force_label_format, force_template_format
+from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace, verify_attachment, upload_attachment
 from fw_heudiconv.backend_funcs.query import get_seq_info
 from heudiconv import utils
 import logging
@@ -114,6 +114,16 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     logger.debug('Found sessions:\n\t%s',
                  "\n\t".join(['%s (%s)' % (ses['label'], ses.id) for ses in sessions]))
 
+    # try subject/session label functions
+    if hasattr(heuristic, "ReplaceSubject"):
+        subject_rename = heuristic.ReplaceSubject
+    else:
+        subject_rename = None
+    if hasattr(heuristic, "ReplaceSession"):
+        session_rename = heuristic.ReplaceSession
+    else:
+        session_rename = None
+
     # try attachments
     if hasattr(heuristic, "AttachToProject"):
         logger.info("Processing project attachments based on heuristic file")
@@ -125,28 +135,14 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
 
         for at in attachments:
 
-            logger.debug(
-            "\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(
-                at['name'], at['data'], at['type']
-                )
-            )
-
-            verify_name, verify_data, verify_type = verify_attachment(at['name'], at['data'], at['type'])
-
-            if not all([verify_name, verify_data, verify_type]):
-
-                logger.warning("Attachments may not be valid for upload!")
-                logger.debug(
-                "\tFilename valid: {}\n\tData valid: {}\n\tMIMEType valid: {}".format(
-                    verify_name, verify_data, verify_type
+            upload_attachment(
+                client, project_obj, level='project', attachment_dict=at,
+                subject_rename=subject_rename, session_rename=session_rename,
+                folders=['anat', 'dwi', 'func', 'fmap', 'perf'],
+                dry_run=dry_run
                     )
-                )
 
-            if not dry_run:
-                file_spec = flywheel.FileSpec(at['name'], at['data'], at['type'])
-                project_obj.upload_file(file_spec)
-
-    if hasattr(heuristic, "AttachToSubject"):
+    '''if hasattr(heuristic, "AttachToSubject"):
 
         logger.info("Processing subject attachments based on heuristic file")
 
@@ -177,7 +173,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             if not dry_run:
                 subjects = [x.subject for x in sessions]
                 file_spec = flywheel.FileSpec(at['name'], at['data'], at['type'])
-                [sub.upload_file(file_spec) for sub in subjects]
+                [sub.upload_file(file_spec) for sub in subjects]'''
 
     num_sessions = len(sessions)
     for sesnum, session in enumerate(sessions):
@@ -225,8 +221,8 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             session_rename = None
 
         # try attachments
-        logger.info("Processing attachments based on heuristic file")
         if hasattr(heuristic, "AttachToSession"):
+            logger.info("Processing session attachments based on heuristic file")
 
             attachments = heuristic.AttachToSession()
 
@@ -235,34 +231,12 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
 
             for at in attachments:
 
-                subj_replace = none_replace if subject_rename is None else subject_rename
-                ses_replace = none_replace if session_rename is None else session_rename
-                subj_label = subj_replace(force_label_format(session.subject.label))
-                sess_label = ses_replace(force_label_format(session.label))
-
-                at['name'] = force_template_format(at['name'])
-                at['name'] = at['name'].format(subject=subj_label, session=sess_label)
-
-                logger.debug(
-                "\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(
-                    at['name'], at['data'], at['type']
-                    )
-                )
-
-                verify_name, verify_data, verify_type = verify_attachment(at['name'], at['data'], at['type'])
-
-                if not all([verify_name, verify_data, verify_type]):
-
-                    logger.warning("Attachments may not be valid for upload!")
-                    logger.debug(
-                    "\tFilename valid: {}\n\tData valid: {}\n\tMIMEType valid: {}".format(
-                        verify_name, verify_data, verify_type
+                upload_attachment(
+                    client, session, level='session', attachment_dict=at,
+                    subject_rename=subject_rename, session_rename=session_rename,
+                    folders=['anat', 'dwi', 'func', 'fmap', 'perf'],
+                    dry_run=dry_run
                         )
-                    )
-
-                if not dry_run:
-                    file_spec = flywheel.FileSpec(at['name'], at['data'], at['type'])
-                    session.upload_file(file_spec)
 
         # final prep
         if not dry_run:

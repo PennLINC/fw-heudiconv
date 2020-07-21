@@ -16,6 +16,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fw-heudiconv-exporter')
 
 
+def regex_attachments(regex, attachment_names):
+
+    print(attachment_names)
+    print(regex)
+    r = re.compile(regex)
+    matches = list(filter(r.match, attachment_names))
+    print(matches)
+    if matches:
+        return True
+    else:
+        return False
+
+
 def get_nested(dct, *keys):
     for key in keys:
         try:
@@ -138,24 +151,26 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
             subjects.append(sub)
 
     for sub in subjects:
-        for sf in sub.files:
-            d = {
-                'name': sf.name,
-                'type': sf.type,
-                'data': sub.id,
-                'BIDS': get_nested(sf, 'info', 'BIDS')
-            }
-            to_download['subject'].append(d)
+        if sub.files and len(sub.files) > 1:
+            for sf in sub.files:
+                d = {
+                    'name': sf.name,
+                    'type': sf.type,
+                    'data': sub.id,
+                    'BIDS': get_nested(sf, 'info', 'BIDS')
+                }
+                to_download['subject'].append(d)
 
     for ses in sessions:
-        for sf in ses.files:
-            d = {
-                'name': sf.name,
-                'type': sf.type,
-                'data': ses.id,
-                'BIDS': get_nested(sf, 'info', 'BIDS')
-            }
-            to_download['session'].append(d)
+        if ses.files and len(ses.files) > 1:
+            for sf in ses.files:
+                d = {
+                    'name': sf.name,
+                    'type': sf.type,
+                    'data': ses.id,
+                    'BIDS': get_nested(sf, 'info', 'BIDS')
+                }
+                to_download['session'].append(d)
 
     # acquistion level
     logger.info("Processing acquisition files...")
@@ -180,8 +195,7 @@ def gather_bids(client, project_label, subject_labels=None, session_labels=None)
 def download_bids(
     client, to_download, root_path,
     folders_to_download=['anat', 'dwi', 'func', 'fmap', 'perf'],
-    attachments=['dataset_description.json', 'events.tsv', 'aslcontext.tsv'],
-    dry_run=True, name='bids_dataset'
+    attachments=None, dry_run=True, name='bids_dataset'
         ):
 
     if dry_run:
@@ -215,40 +229,67 @@ def download_bids(
 
     # deal with project level files
     # Project's subject data
-    '''for fi in to_download['project']:
+    for fi in to_download['project']:
 
-        if any([fi['name'] in x for x in attachments]):
-            path = "/".join([root_path, fi['name']])
-            container = client.get(fi['data'])
+        if fi['BIDS'] is not None:
+            output_path = get_nested(fi, 'BIDS', 'Path')
+            path = str(Path(output_path, fi['name']))
+
+            if not Path(output_path).exists():
+                os.makedirs(Path(output_path).resolve(), exist_ok=True)
 
             if dry_run:
                 Path(path).touch()
             else:
+                container = client.get(fi['data'])
                 container.download_file(fi['name'], path)
 
     # deal with subject level files
     for fi in to_download['subject']:
-        pass
-        if any([fi['name'] in x for x in attachments]):
-            path = "/".join([root_path, fi['name']])
-            container = client.get(fi['data'])
+
+        if attachments:
+
+            if fi['name'] not in attachments:
+                continue
+
+        if fi['BIDS'] is not None:
+
+            output_path = get_nested(fi, 'BIDS', 'Path')
+            path = str(Path(output_path, fi['name']))
+
+            if not Path(output_path).exists():
+                os.makedirs(Path(output_path).resolve(), exist_ok=True)
 
             if dry_run:
                 Path(path).touch()
             else:
+                container = client.get(fi['data'])
                 container.download_file(fi['name'], path)
+
     for fi in to_download['session']:
-        pass
-        #download_path = get_metadata(fi, ['BIDS', 'Path'])
-        #if download_path:
-        #    print('/'.join([root_path, download_path, fi['name']]))'''
+        if attachments:
+
+            if not any([re.search(att, fi['name']) for att in attachments]):
+                continue
+
+        if fi['BIDS'] is not None:
+            output_path = Path(root_path, get_nested(fi, 'BIDS', 'Path'))
+            path = str(Path(output_path, fi['name']))
+
+            if not Path(output_path).exists():
+                os.makedirs(Path(output_path).resolve(), exist_ok=True)
+
+            if dry_run:
+                Path(path).touch()
+            else:
+                container = client.get(fi['data'])
+                container.download_file(fi['name'], path)
 
     # deal with acquisition level files
     for fi in to_download['acquisition']:
         project_path = get_nested(fi, 'BIDS', 'Path')
         folder = get_nested(fi, 'BIDS', 'Folder')
         ignore = get_nested(fi, 'BIDS', 'ignore')
-
         if project_path and folder in folders_to_download and not ignore:
 
             # only download files with sidecars
@@ -334,7 +375,13 @@ def get_parser():
         "--folders",
         help="The BIDS folders to export",
         nargs="+",
-        default=['anat', 'dwi', 'fmap', 'func']
+        default=['anat', 'dwi', 'fmap', 'func', 'perf']
+    )
+    parser.add_argument(
+        "--attachments",
+        help="Only download attachment files matching these names",
+        nargs="+",
+        default=None
     )
     parser.add_argument(
         "--dry-run",
@@ -393,19 +440,27 @@ def main():
         logger.info("Creating destination directory...")
         os.makedirs(args.destination)
 
-    downloads = gather_bids(client=fw,
-                            project_label=args.project,
-                            session_labels=args.session,
-                            subject_labels=args.subject
-                            )
+    downloads = gather_bids(
+        client=fw, project_label=args.project, session_labels=args.session,
+        subject_labels=args.subject
+        )
 
-    download_bids(client=fw, to_download=downloads, root_path=destination, folders_to_download=args.folders, dry_run=args.dry_run, name=args.directory_name)
+    if args.attachments is not None and args.verbose:
+        logger.info("Filtering attachments...")
+        logger.info(args.attachments)
+
+    download_bids(
+        client=fw, to_download=downloads, root_path=destination,
+        folders_to_download=args.folders, dry_run=args.dry_run,
+        attachments=args.attachments, name=args.directory_name
+        )
 
     if args.dry_run:
         shutil.rmtree(Path(args.destination, args.directory_name))
 
     logger.info("Done!")
     logger.info("{:=^70}".format(": Exiting fw-heudiconv exporter :"))
+
 
 if __name__ == '__main__':
     main()
