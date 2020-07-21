@@ -8,7 +8,7 @@ import pprint
 import validators
 import requests
 from collections import defaultdict
-from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace, verify_attachment
+from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace, verify_attachment, none_replace, force_label_format, force_template_format
 from fw_heudiconv.backend_funcs.query import get_seq_info
 from heudiconv import utils
 import logging
@@ -234,6 +234,14 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
                 attachments = [attachments]
 
             for at in attachments:
+
+                subj_replace = none_replace if subject_rename is None else subject_rename
+                ses_replace = none_replace if session_rename is None else session_rename
+                subj_label = subj_replace(force_label_format(session.subject.label))
+                sess_label = ses_replace(force_label_format(session.label))
+
+                at['name'] = force_template_format(at['name'])
+                at['name'] = at['name'].format(subject=subj_label, session=sess_label)
 
                 logger.debug(
                 "\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(
