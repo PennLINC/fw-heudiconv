@@ -3,6 +3,9 @@ import re
 import pdb
 import operator
 import pprint
+import mimetypes
+from os import path
+from pathvalidate import is_valid_filename
 from fw_heudiconv.cli.export import get_nested
 
 logger = logging.getLogger('fw-heudiconv-curator')
@@ -331,3 +334,28 @@ def confirm_bids_namespace(project_obj, dry_run):
             project_obj = project_obj.reload()
 
     return project_obj
+
+
+def verify_attachment(name, data, dtype='text/tab-separated-values'):
+
+    types = mimetypes.types_map
+
+    # check for extension
+    # if found, check its dtype matches
+    ext = path.splitext(name)[1]
+    valid_fname = is_valid_filename(name)
+
+    if ext:
+
+        output_dtype = types.get(ext, None)
+        if dtype == output_dtype:
+            valid_dtype = True
+        else:
+            valid_dtype = False
+    else:
+        # no extension, just check dtype
+        valid_dtype = dtype in list(mimetypes.types_map.values())
+
+    valid_data = isinstance(data, str)
+
+    return valid_fname, valid_data, valid_dtype

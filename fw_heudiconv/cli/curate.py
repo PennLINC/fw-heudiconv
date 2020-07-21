@@ -8,7 +8,7 @@ import pprint
 import validators
 import requests
 from collections import defaultdict
-from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
+from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace, verify_attachment
 from fw_heudiconv.backend_funcs.query import get_seq_info
 from heudiconv import utils
 import logging
@@ -117,22 +117,67 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     # try attachments
     if hasattr(heuristic, "AttachToProject"):
         logger.info("Processing project attachments based on heuristic file")
-        attach_name, attach_data, attach_type = heuristic.AttachToProject()
-        logger.debug("\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(attach_name, attach_data, attach_type))
 
-        if not dry_run:
-            file_spec = flywheel.FileSpec(attach_name, attach_data, attach_type)
-            project_obj.upload_file(file_spec)
+        attachments = heuristic.AttachToProject()
+
+        if not isinstance(attachments, list):
+            attachments = [attachments]
+
+        for at in attachments:
+
+            logger.debug(
+            "\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(
+                at['name'], at['data'], at['type']
+                )
+            )
+
+            verify_name, verify_data, verify_type = verify_attachment(at['name'], at['data'], at['type'])
+
+            if not all([verify_name, verify_data, verify_type]):
+
+                logger.warning("Attachments may not be valid for upload!")
+                logger.debug(
+                "\tFilename valid: {}\n\tData valid: {}\n\tMIMEType valid: {}".format(
+                    verify_name, verify_data, verify_type
+                    )
+                )
+
+            if not dry_run:
+                file_spec = flywheel.FileSpec(at['name'], at['data'], at['type'])
+                project_obj.upload_file(file_spec)
 
     if hasattr(heuristic, "AttachToSubject"):
-        logger.info("Processing subject attachments based on heuristic file")
-        attach_name, attach_data, attach_type = heuristic.AttachToSubject()
-        logger.debug("\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(attach_name, attach_data, attach_type))
 
-        if not dry_run:
-            subjects = [x.subject for x in sessions]
-            file_spec = flywheel.FileSpec(attach_name, attach_data, attach_type)
-            [sub.upload_file(file_spec) for sub in subjects]
+        logger.info("Processing subject attachments based on heuristic file")
+
+        attachments = heuristic.AttachToSubject()
+
+        if not isinstance(attachments, list):
+            attachments = [attachments]
+
+        for at in attachments:
+
+            logger.debug(
+            "\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(
+                at['name'], at['data'], at['type']
+                )
+            )
+
+            verify_name, verify_data, verify_type = verify_attachment(at['name'], at['data'], at['type'])
+
+            if not all([verify_name, verify_data, verify_type]):
+
+                logger.warning("Attachments may not be valid for upload!")
+                logger.debug(
+                "\tFilename valid: {}\n\tData valid: {}\n\tMIMEType valid: {}".format(
+                    verify_name, verify_data, verify_type
+                    )
+                )
+
+            if not dry_run:
+                subjects = [x.subject for x in sessions]
+                file_spec = flywheel.FileSpec(at['name'], at['data'], at['type'])
+                [sub.upload_file(file_spec) for sub in subjects]
 
     num_sessions = len(sessions)
     for sesnum, session in enumerate(sessions):
@@ -180,14 +225,36 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             session_rename = None
 
         # try attachments
+        logger.info("Processing attachments based on heuristic file")
         if hasattr(heuristic, "AttachToSession"):
-            logger.info("Processing session attachments based on heuristic file")
-            attach_name, attach_data, attach_type = heuristic.AttachToSession()
-            logger.debug("\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(attach_name, attach_data, attach_type))
 
-            if not dry_run:
-                file_spec = flywheel.FileSpec(attach_name, attach_data, attach_type)
-                session.upload_file(file_spec)
+            attachments = heuristic.AttachToSession()
+
+            if not isinstance(attachments, list):
+                attachments = [attachments]
+
+            for at in attachments:
+
+                logger.debug(
+                "\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(
+                    at['name'], at['data'], at['type']
+                    )
+                )
+
+                verify_name, verify_data, verify_type = verify_attachment(at['name'], at['data'], at['type'])
+
+                if not all([verify_name, verify_data, verify_type]):
+
+                    logger.warning("Attachments may not be valid for upload!")
+                    logger.debug(
+                    "\tFilename valid: {}\n\tData valid: {}\n\tMIMEType valid: {}".format(
+                        verify_name, verify_data, verify_type
+                        )
+                    )
+
+                if not dry_run:
+                    file_spec = flywheel.FileSpec(at['name'], at['data'], at['type'])
+                    session.upload_file(file_spec)
 
         # final prep
         if not dry_run:
