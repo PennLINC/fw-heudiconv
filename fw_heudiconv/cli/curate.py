@@ -8,7 +8,7 @@ import pprint
 import validators
 import requests
 from collections import defaultdict
-from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace
+from fw_heudiconv.backend_funcs.convert import apply_heuristic, confirm_intentions, confirm_bids_namespace, verify_attachment, upload_attachment
 from fw_heudiconv.backend_funcs.query import get_seq_info
 from heudiconv import utils
 import logging
@@ -102,6 +102,7 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     assert project_obj, "Project not found! Maybe check spelling...?"
     logger.debug('Found project: %s (%s)', project_obj['label'], project_obj.id)
     project_obj = confirm_bids_namespace(project_obj, dry_run)
+
     sessions = client.get_project_sessions(project_obj.id)
     # filters
     if subject_labels:
@@ -113,8 +114,70 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
     logger.debug('Found sessions:\n\t%s',
                  "\n\t".join(['%s (%s)' % (ses['label'], ses.id) for ses in sessions]))
 
+    # try subject/session label functions
+    if hasattr(heuristic, "ReplaceSubject"):
+        subject_rename = heuristic.ReplaceSubject
+    else:
+        subject_rename = None
+    if hasattr(heuristic, "ReplaceSession"):
+        session_rename = heuristic.ReplaceSession
+    else:
+        session_rename = None
+
+    # try attachments
+    if hasattr(heuristic, "AttachToProject"):
+        logger.info("Processing project attachments based on heuristic file")
+
+        attachments = heuristic.AttachToProject()
+
+        if not isinstance(attachments, list):
+            attachments = [attachments]
+
+        for at in attachments:
+
+            upload_attachment(
+                client, project_obj, level='project', attachment_dict=at,
+                subject_rename=subject_rename, session_rename=session_rename,
+                folders=['anat', 'dwi', 'func', 'fmap', 'perf'],
+                dry_run=dry_run
+                    )
+
+    '''if hasattr(heuristic, "AttachToSubject"):
+
+        logger.info("Processing subject attachments based on heuristic file")
+
+        attachments = heuristic.AttachToSubject()
+
+        if not isinstance(attachments, list):
+            attachments = [attachments]
+
+        for at in attachments:
+
+            logger.debug(
+            "\tFilename: {}\n\tData: {}\n\tMIMEType: {}".format(
+                at['name'], at['data'], at['type']
+                )
+            )
+
+            verify_name, verify_data, verify_type = verify_attachment(at['name'], at['data'], at['type'])
+
+            if not all([verify_name, verify_data, verify_type]):
+
+                logger.warning("Attachments may not be valid for upload!")
+                logger.debug(
+                "\tFilename valid: {}\n\tData valid: {}\n\tMIMEType valid: {}".format(
+                    verify_name, verify_data, verify_type
+                    )
+                )
+
+            if not dry_run:
+                subjects = [x.subject for x in sessions]
+                file_spec = flywheel.FileSpec(at['name'], at['data'], at['type'])
+                [sub.upload_file(file_spec) for sub in subjects]'''
+
     num_sessions = len(sessions)
     for sesnum, session in enumerate(sessions):
+
         # Find SeqInfos to apply the heuristic to
         logger.info("Applying heuristic to %s (%d/%d)...", session.label, sesnum+1,
                     num_sessions)
@@ -124,12 +187,14 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             "Found SeqInfos:\n%s",
             "\n\t".join([pretty_string_seqinfo(seq) for seq in seq_infos]))
 
+        # apply heuristic to seqinfos
         to_rename = heuristic.infotodict(seq_infos)
 
         if not to_rename:
             logger.debug("No changes to apply!")
             continue
 
+        # try intendedfors
         intention_map = defaultdict(list)
         if hasattr(heuristic, "IntendedFor"):
             logger.info("Processing IntendedFor fields based on heuristic file")
@@ -138,15 +203,14 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
                          pprint.pformat(
                              [(k[0], v) for k, v in dict(intention_map).items()]))
 
+        # try metadataextras
         metadata_extras = defaultdict(list)
         if hasattr(heuristic, "MetadataExtras"):
             logger.info("Processing Medatata fields based on heuristic file")
             metadata_extras.update(heuristic.MetadataExtras)
             logger.debug("Metadata extras: %s", metadata_extras)
 
-        if not dry_run:
-            logger.info("Applying changes to files...")
-
+        # try subject/session label functions
         if hasattr(heuristic, "ReplaceSubject"):
             subject_rename = heuristic.ReplaceSubject
         else:
@@ -155,6 +219,28 @@ def convert_to_bids(client, project_label, heuristic_path, subject_labels=None,
             session_rename = heuristic.ReplaceSession
         else:
             session_rename = None
+
+        # try attachments
+        if hasattr(heuristic, "AttachToSession"):
+            logger.info("Processing session attachments based on heuristic file")
+
+            attachments = heuristic.AttachToSession()
+
+            if not isinstance(attachments, list):
+                attachments = [attachments]
+
+            for at in attachments:
+
+                upload_attachment(
+                    client, session, level='session', attachment_dict=at,
+                    subject_rename=subject_rename, session_rename=session_rename,
+                    folders=['anat', 'dwi', 'func', 'fmap', 'perf'],
+                    dry_run=dry_run
+                        )
+
+        # final prep
+        if not dry_run:
+            logger.info("Applying changes to files...")
 
         for key, val in to_rename.items():
 
