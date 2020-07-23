@@ -92,7 +92,9 @@ def infotodict(seqinfo):
     a number of attributes that can be tested in boolean logic; when a match is found,
     the ``series_id`` attribute is added to a list that tracks the matches.
 
-    All usable attributes are listed as columns in the output of the tabulate tool.
+    All usable attributes are listed as columns in the output of the tabulate tool
+    (for example, all DICOMs have a ``series_description``, which shows up as a column in the output of
+    ``fw-heudiconv-tabulate``; you can access this attribute using ``s.series_description``).
 
     The return object **must** be a dictionary where each *key* is a ``key`` variable already
     earlier defined in the namespace, and the corresponding *value* is a list of ``series_id``.
