@@ -14,8 +14,10 @@ Contents
 
    installation
    quickstart
+   overview
    usage
    heuristic
+   tips
 
 Indices and tables
 ------------------

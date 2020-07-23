@@ -5,19 +5,17 @@
 Command Line
 ==============
 
-1. Make sure you have the [Flywheel CLI](https://docs.flywheel.io/hc/en-us/articles/360008162214-Installing-the-Command-Line-Interface-CLI-) and [SDK](https://pypi.org/project/flywheel-sdk/) installed. Note that this is `flywheel-sdk` and NOT `flywheel`.
+1. Make sure you have the Flywheel `CLI <https://docs.flywheel.io/hc/en-us/articles/360008162214-Installing-the-Command-Line-Interface-CLI->`_ and `SDK <https://pypi.org/project/flywheel-sdk/>`_ installed. Note that this is ``flywheel-sdk`` and **NOT** ``flywheel``.
 
-2. Download the package from pip with ``pip install fw-heudiconv``, OR [Clone or download this repository](https://github.com/PennBBL/fw-heudiconv) to your machine. Use the flag `--dry_run` to test your heuristic.
+2. Download the package from pip with ``pip install fw-heudiconv``
 
 3. Tabulate your DICOM header info with ``fw-heudiconv-tabulate --project <MY_PROJECT> --path <OUTPUT_PATH>``
 
 4. Design your :ref:`heuristic <heuristic>` file in Python.
 
-5. **curate a dataset** on Flywheel into BIDS: ``fw-heudiconv-curate --project <MY_PROJECT> --heuristic <MY_HEURISTIC_FILE>``
+5. **Curate your dataset** on Flywheel into BIDS: ``fw-heudiconv-curate --project <MY_PROJECT> --heuristic <MY_HEURISTIC_FILE>``. Use the flag ``--dry_run`` to test your heuristic.
 
 To **export the dataset** to your machine: ``fw-heudiconv-export --project <MY_PROJECT> --path <OUTPUT_DIR>``
-
-To **list the sequence information** for your dataset:
 
 Use the ``--subject <SUBJECT>`` and/or ``--session <SESSION>`` flags to use the tool on specific subject/session labels
 
