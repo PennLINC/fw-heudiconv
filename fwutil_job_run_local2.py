@@ -17,13 +17,14 @@
 # Usage:
 #   Positional inputs:
 #       [1] - Api Key
-#       [2] - Job ID
-#       [3] - (Optional) Directory to save job contents. Defaults to cwd.
+#       [2] - Gear Name
+#       [3] - Job ID
+#       [4] - (Optional) Directory to save job contents. Defaults to cwd.
 #
 #   fwutil_job_run_local.py <api_key> <job_id> <output_base_directory>
 #
 # Example:
-#   fwutil_job_run_local.py $API_KEY 298e73lacbde98273lkad
+#   fwutil_job_run_local.py $API_KEY fmriprep 298e73lacbde98273lkad
 #
 #
 
@@ -53,9 +54,14 @@ def build_local_test(job, test_path_root, api_key):
         os.mkdir(output_dir)
 
     # If the job requires an api_key, then add it from the env to the config
+    # TODO: Use the base to set the key
     gear = fw.get_gear(job.gear_id).gear
+    if gear.inputs.get('api-key', ""):
+        job['config']['inputs']['api-key'] = { "key": api_key, "base": "api-key" }
+    if gear.inputs.get('key', ""):
+        job['config']['inputs']['key'] = { "key": api_key, "base": "api-key" }
     if gear.inputs.get('api_key', ""):
-        job['config']['inputs']['api_key'] = { "key": api_key }
+        job['config']['inputs']['api_key'] = { "key": api_key, "base": "api-key" }
 
     # Write the config file
     config_file = os.path.join(test_path, 'config.json')
@@ -68,7 +74,7 @@ def build_local_test(job, test_path_root, api_key):
 
     for k in input_data:
 
-        if k == 'api_key':
+        if k == 'api_key' or k == 'key' or k == 'api-key':
             continue
 
         _input = input_data[k]
@@ -122,10 +128,13 @@ if __name__=='__main__':
     """
     Given a Flywheel job id, this script will generate a local testing directory
     within which you can run the job locally, using Docker, as it ran in Flywheel.
+
     Positional inputs:
         [1] - Api Key
-        [2] - Job ID
-        [3] - (Optional) Directory to save job contents. Defaults to cwd.
+        [2] - Gear Name
+        [3] - Job ID
+        [4] - (Optional) Directory to save job contents. Defaults to cwd.
+
     """
 
     if not sys.argv[1]:
@@ -136,15 +145,19 @@ if __name__=='__main__':
     fw = flywheel.Client(api_key)
     if fw.get_current_user().root:
         fw = flywheel.Client(api_key, root=True)
-    else:
-        raise ValueError('This process requires site-admin priviliges!')
+        job = fw.get_job(sys.argv[3])
 
     # Get the job
-    job = fw.get_job(sys.argv[2])
+    if not job:
+        job = [x for x in fw.get_current_user_jobs(gear=sys.argv[2]).jobs if x.id == sys.argv[3]]
+        if job:
+            job = job[0]
+        else:
+            raise ValueError('Job could not be found. The ID may not be valid, or it may not be your job!')
 
     # Build the local test
-    if len(sys.argv) == 4:
-        test_path_root = sys.argv[3]
+    if len(sys.argv) == 5:
+        test_path_root = sys.argv[4]
     else:
         test_path_root = os.getcwd()
 

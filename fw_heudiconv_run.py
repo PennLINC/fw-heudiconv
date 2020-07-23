@@ -4,6 +4,7 @@ import flywheel
 import os
 import shutil
 import logging
+import sys
 from fw_heudiconv.cli import export
 
 
@@ -83,7 +84,7 @@ elif action.lower() == "meta":
     call = call + " --autogen-participants-meta --autogen-sessions-meta"
 
 elif action.lower() == "validate":
-    call = call + " --flywheel --directory {}".format("/flywheel/v0/output")
+    call = call + " --tabulate {0} --flywheel --directory {0}".format("/flywheel/v0/output")
 
 elif action.lower() == "tabulate":
     call = call + " --path {}".format("/flywheel/v0/output")
@@ -91,7 +92,9 @@ elif action.lower() == "tabulate":
 elif action.lower() == "reproin":
     call = call + " --protocol-names {}".format(heuristic)
 
-os.system(call)
+logger.info('Call: ' + call)
+
+exit_status = os.system(call)
 
 if action.lower() in ["export", "tabulate"]:
 
@@ -109,3 +112,6 @@ if action.lower() in ["export", "tabulate"]:
 
 logger.info("Done!")
 logger.info("{:=^70}\n".format(": Exiting fw-heudiconv gear manager :"))
+
+if exit_status > 0:
+    raise Exception("fw-heudiconv exited with errors! See the log for more info.")

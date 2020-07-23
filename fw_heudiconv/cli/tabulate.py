@@ -64,7 +64,7 @@ def output_result(df, path, project_label, dry_run):
 def get_parser():
 
     parser = argparse.ArgumentParser(
-        description="Use a heudiconv heuristic to curate bids on flywheel")
+        description="Tabulate DICOM header info from a project on Flywheel")
     parser.add_argument(
         "--project",
         help="The project in flywheel",

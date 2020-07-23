@@ -1,7 +1,8 @@
+sphinx-argparse
 flywheel-sdk
 heudiconv
 pandas
 bids-validator
 validators
-sphinx-argparse
 commonmark
+-r ../../requirements.txt
