@@ -1,2 +1,2 @@
 sphinx-argparse==0.2.1
--r ../requirements.txt
+-r ../../requirements.txt
