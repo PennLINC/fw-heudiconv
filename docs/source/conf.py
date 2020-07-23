@@ -54,6 +54,8 @@ html_theme = 'alabaster'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+#-- User Added---------------------------------------------------------------
+
 import os
 import sys
 
@@ -61,3 +63,4 @@ sys.path.insert(0, os.path.abspath('../..'))
 extensions = [
 'sphinx.ext.autodoc',
 'sphinxarg.ext']
+add_module_names = False
