@@ -1,2 +1,7 @@
 sphinx-argparse==0.2.1
+flywheel-sdk
+heudiconv
+pandas
+bids-validator
+validators
 -r ../../requirements.txt
