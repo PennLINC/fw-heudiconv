@@ -88,4 +88,4 @@ Appendix — ``fw-heudiconv-validate``
 
 ``fw-heudiconv-validate`` is a convenience tool that wraps the official Bids Validator and pipes the output of ``fw-heudiconv-export`` to it. It's most useful for validating Flywheel data through a gear on the GUI.
 
-To use ``fw-heuduiconv-validate`` on your local machine, you need to install [node.js](https://nodejs.org/en/). This is not necessary, however, and instead you are welcome to use ``fw-heudiconv-validate`` on your Flywheel site, or, use ``fw-heudiconv-export`` to export data first, and then use the official Bids Validator available [here](http://bids-standard.github.io/bids-validator/)
+To use ``fw-heuduiconv-validate`` on your local machine, you need to install `node.js <https://nodejs.org/en/>`_. This is not necessary, however, and instead you are welcome to use ``fw-heudiconv-validate`` on your Flywheel site, or, use ``fw-heudiconv-export`` to export data first, and then use the official Bids Validator available [here](http://bids-standard.github.io/bids-validator/)

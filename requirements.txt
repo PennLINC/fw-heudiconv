@@ -1,2 +1,5 @@
 flywheel-sdk
 heudiconv
+pandas
+bids-validator
+validators
