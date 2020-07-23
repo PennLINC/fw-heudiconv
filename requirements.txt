@@ -4,3 +4,4 @@ pandas
 bids-validator
 validators
 sphinx-argparse==0.2.1
+commonmark
