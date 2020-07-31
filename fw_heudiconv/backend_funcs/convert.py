@@ -6,6 +6,7 @@ import pprint
 import mimetypes
 import flywheel
 from os import path
+from pathvalidate import is_valid_filename
 from pathlib import Path
 from fw_heudiconv.cli.export import get_nested
 

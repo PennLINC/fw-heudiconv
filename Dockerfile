@@ -17,7 +17,7 @@ RUN curl -sL https://deb.nodesource.com/setup_10.x | bash
 RUN apt-get -y update && apt-get install -y zip nodejs
 RUN npm install -g bids-validator
 RUN python3 -m pip install --upgrade pip
-RUN pip install --no-cache nipype
+RUN pip install --no-cache nipype pathvalidate
 RUN pip install --no-cache flywheel-sdk==11.*
 
 COPY . /src
