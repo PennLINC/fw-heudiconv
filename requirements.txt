@@ -5,3 +5,4 @@ bids-validator
 validators
 sphinx-argparse
 commonmark
+pathvalidate
