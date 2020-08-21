@@ -2,7 +2,7 @@
 	"name": "fw-heudiconv",
 	"label": "Flywheel HeuDiConv",
 	"description": "HeuDiConv-style BIDS curation on Flywheel. Flywheel HeuDiConv (or fw-heudiconv, pronounced /fwuː di kɑː n(v)/) is a Python-based toolkit that leverages the flexibility and comprehensiveness of HeuDiConv to curate neuroimaging data on Flywheel into a BIDS-valid format.",
-	"version": "0.2.12_0.3.1",
+	"version": "0.2.13_0.3.1",
 	"inputs": {
 		"api_key": {
 			"base": "api-key"
@@ -18,7 +18,7 @@
 			"default": "Curate",
 			"description": "Curate: Apply heuristic to project. Export: Create zip of BIDS tree. Tabulate: Create a table of sequence information in a project. Clear: Clear BIDS data from project. Reproin Check: Apply the reproin heuristic to a list of reproin names to check for validity. Meta: Autogenerate BIDS metadata for project.",
 			"type": "string",
-			"enum": ["Curate", "Export", "Tabulate", "Clear", "Reproin","Meta", "Validate"]
+			"enum": ["Curate", "Export", "Tabulate", "Clear", "Reproin", "Validate"]
 		},
 		"dry_run": {
 			"default": true,
@@ -51,7 +51,7 @@
 	"custom": {
 		"gear-builder": {
 			"category": "analysis",
-			"image": "pennbbl/fw-heudiconv:0.2.12_0.3.1"
+			"image": "pennbbl/fw-heudiconv:0.2.13_0.3.1"
 		},
 		"flywheel":{"suite": "PennBBL"}
 	}

@@ -64,7 +64,7 @@ logger.info("Action: {}".format(action))
 logger.info("Dry run: {}".format(dry_run))
 
 # action
-call = "fw-heudiconv-{} --verbose --api-key {} --project {}".format(action.lower(), key, project_label.replace(" ", "\ "))
+call = "fw-heudiconv-{} --verbose --project {}".format(action.lower(), project_label.replace(" ", "\ "))
 
 if dry_run:
     call  = call + " --dry-run"
@@ -80,9 +80,6 @@ if heuristic and action.lower() == "curate":
 elif action.lower() == "export":
     call = call + " --destination {}".format("/flywheel/v0/output")
 
-elif action.lower() == "meta":
-    call = call + " --autogen-participants-meta --autogen-sessions-meta"
-
 elif action.lower() == "validate":
     call = call + " --tabulate {0} --flywheel --directory {0}".format("/flywheel/v0/output")
 
@@ -93,6 +90,8 @@ elif action.lower() == "reproin":
     call = call + " --protocol-names {}".format(heuristic)
 
 logger.info('Call: ' + call)
+
+call = call + " --api-key {}".format(key)
 
 exit_status = os.system(call)
 
