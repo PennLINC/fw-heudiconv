@@ -5,6 +5,8 @@ import operator
 import pprint
 import mimetypes
 import flywheel
+import json
+import pandas as pd
 from os import path
 from pathvalidate import is_valid_filename
 from pathlib import Path
@@ -444,3 +446,38 @@ def upload_attachment(
         target_object = target_object.reload()
         target_object.update_file_info(attachment_dict['name'], {'BIDS': bids})
         logger.info("Attachment uploaded!")
+
+def parse_validator(path):
+
+    with open(path, 'r') as read_file:
+        data = json.load(read_file)
+
+    issues = data['issues']
+
+    def parse_issue(issue_dict):
+
+        return_dict = {}
+        return_dict['files'] = [get_nested(x, 'file', 'relativePath') for x in issue_dict.get('files', '')]
+        return_dict['type'] = issue_dict.get('key' '')
+        return_dict['severity'] = issue_dict.get('severity', '')
+        return_dict['description'] = issue_dict.get('reason', '')
+        return_dict['code'] = issue_dict.get('code', '')
+        return_dict['url'] = issue_dict.get('helpUrl', '')
+
+        return(return_dict)
+
+    df = pd.DataFrame()
+
+    for warn in issues['warnings']:
+
+        parsed = parse_issue(warn)
+        parsed = pd.DataFrame(parsed)
+        df = df.append(parsed, ignore_index=True)
+
+    for err in issues['errors']:
+
+        parsed = parse_issue(err)
+        parsed = pd.DataFrame(parsed)
+        df = df.append(parsed, ignore_index=True)
+
+    return df

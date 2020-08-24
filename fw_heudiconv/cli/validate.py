@@ -6,6 +6,7 @@ import argparse
 import warnings
 import re
 from pathlib import Path
+from ..backend_funcs.convert import parse_validator
 import subprocess as sub
 import pandas as pd
 
@@ -44,33 +45,16 @@ def validate_local(path, verbose, tabulate='.'):
     if p.returncode != 0:
         logger.info(error)
 
-    clean_output = re.sub('\s+',' ', escape_ansi(output))
-    issues = find_all(r'\[[A-Z]+\].+?(?=(\[[A-Z]+\]|Summary))', clean_output)
-
-    if issues and os.path.exists(tabulate):
+    if os.path.exists(tabulate):
 
         logger.info("Parsing issues and writing to issues.csv")
-        issues_tuples = []
+        command = ['bids-validator', path, '--json']
+        with open(tabulate + '/issues.json', "w") as outfile:
+            p2 = sub.run(command, stdout=outfile)
 
-        for iss in issues:
-            issue_type_match = re.search(r'\[[A-Z]+\]', iss)
-            issue_type = iss[:issue_type_match.end()]
-            issue_description = iss[issue_type_match.end():].lstrip()
-            issue_evidence = find_all(
-                r'(?<=Evidence: ).+?(?=(Evidence|\[[A-Z]+\]|\Z))', issue_description
-                )
-            if issue_evidence:
-                evidence_ix = re.search('Evidence', issue_description).start()
-                issue_description = issue_description[:evidence_ix]
-            else:
-                issue_evidence = ''
-
-            issues_tuples.append((issue_type, issue_description, issue_evidence))
-
-        issues_df = pd.DataFrame(issues_tuples, columns=['Type', 'Description', 'Evidence'])
-        issues_df_full = issues_df.explode('Evidence')
-        logger.info("Writing...")
-        issues_df_full.to_csv(tabulate + '/issues.csv', index=False)
+        if p2.returncode == 0:
+            issues_df_full = parse_validator(tabulate + '/issues.json')
+            issues_df_full.to_csv(tabulate + '/issues.csv', index=False)
 
     return p.returncode
 
@@ -101,19 +85,9 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description="Validate BIDS-curated data on Flywheel. A simple wrapper around the original BIDS Validator https://github.com/bids-standard/bids-validator")
 
-    location = parser.add_mutually_exclusive_group(required=True)
-    location.add_argument(
-        '--local',
-        help="Validate a local directory of BIDS data",
-        action='store_true')
-    location.add_argument(
-        '--flywheel',
-        help="Validate a BIDS project on Flywheel",
-        action='store_true')
-
     parser.add_argument(
         "--directory",
-        help="Path to existing BIDS data directory OR temp space used for validation",
+        help="Temp space used for validation",
         default=".",
         required=False,
         type=str
@@ -175,33 +149,20 @@ def main():
 
     exit = 1
 
-    if args.local:
-        if not os.path.exists(args.directory):
-            logger.error("Couldn't find the BIDS dataset!")
-            sys.exit(exit)
-        else:
-            logger.info("Validating local BIDS dataset {}".format(args.directory))
-            exit = validate_local(args.directory, args.verbose)
+    if not args.project:
+        logger.error("No project on Flywheel specified!")
+        sys.exit(exit)
+
+    success = fw_heudiconv_export(proj=args.project, subjects=args.subject, sessions=args.session, destination=args.directory, name='bids_directory', key=args.api_key)
+
+    if success == 0:
+        path = Path(args.directory, 'bids_directory')
+        exit = validate_local(path, args.verbose, args.tabulate)
+        shutil.rmtree(path)
 
     else:
-        if not args.project:
-            logger.error("No project on Flywheel specified!")
-            sys.exit(exit)
 
-        #if not os.path.exists(args.directory):
-        #    logger.info("Creating download directory...")
-        #    os.makedirs(args.directory)
-
-        success = fw_heudiconv_export(proj=args.project, subjects=args.subject, sessions=args.session, destination=args.directory, name='bids_directory', key=args.api_key)
-
-        if success == 0:
-            path = Path(args.directory, 'bids_directory')
-            exit = validate_local(path, args.verbose, args.tabulate)
-            shutil.rmtree(path)
-
-        else:
-
-            logger.error("There was a problem downloading the data to a temp space for validation!")
+        logger.error("There was a problem downloading the data to a temp space for validation!")
     logger.info("Done!")
     logger.info("{:=^70}".format(": Exiting fw-heudiconv validator :"))
     sys.exit(exit)
