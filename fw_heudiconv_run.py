@@ -23,7 +23,27 @@ fw = flywheel.Client(key)
 user = fw.get_current_user()
 
 # start up logic:
-analysis_container = fw.get(destination['id'])
+with flywheel.GearContext() as context:
+    config = context.config
+
+    api_key = context.get_input('api_key')['key']
+    fw = flywheel.Client(api_key)  # log in to flywheel
+
+    # get the analysis object this gear run will be in
+    analysis_id = context.destination['id']
+    analysis_container = fw.get(analysis_id)
+
+    parent_container = analysis_container.parent
+
+    if parent_container.type == "project":
+        subjects = None
+        sessions = None
+
+    else:
+        subjects = None
+        session = fw.get(parent_container['id'])
+        sessions = [session.label]
+
 project_container = fw.get(analysis_container.parents['project'])
 project_label = project_container.label
 dry_run = config['dry_run']
@@ -39,7 +59,7 @@ if not bool(heuristic) and action == "Curate":
     raise ValueError("No heuristic given!")
 
 # whole project, single session?
-do_whole_project = config['do_whole_project']
+'''do_whole_project = config['do_whole_project']
 
 if not do_whole_project:
 
@@ -53,7 +73,7 @@ if not do_whole_project:
 else:
     sessions = None
     subjects = None
-
+'''
 # logging stuff
 logger.info("Calling fw-heudiconv with the following settings:")
 logger.info("Project: {}".format(project_label))
