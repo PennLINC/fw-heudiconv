@@ -101,7 +101,7 @@ elif action.lower() == "export":
     call = call + " --destination {}".format("/flywheel/v0/output")
 
 elif action.lower() == "validate":
-    call = call + " --tabulate {0} --flywheel --directory {0}".format("/flywheel/v0/output")
+    call = call + " --tabulate {0} --directory {0}".format("/flywheel/v0/output")
 
 elif action.lower() == "tabulate":
     call = call + " --path {}".format("/flywheel/v0/output")
