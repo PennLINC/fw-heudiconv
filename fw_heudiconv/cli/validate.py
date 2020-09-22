@@ -48,7 +48,7 @@ def validate_local(path, verbose, tabulate='.'):
     if os.path.exists(tabulate):
 
         logger.info("Parsing issues and writing to issues.csv")
-        command = ['bids-validator', path, '--json']
+        command = ['bids-validator', path, '--json', '--verbose']
         with open(tabulate + '/issues.json', "w") as outfile:
             p2 = sub.run(command, stdout=outfile)
 

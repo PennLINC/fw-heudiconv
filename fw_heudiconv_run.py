@@ -40,9 +40,10 @@ with flywheel.GearContext() as context:
         sessions = None
 
     else:
-        subjects = None
         session = fw.get(parent_container['id'])
         sessions = [session.label]
+        subject = fw.get(session['parents']['subject'])
+        subjects = [subject.label]
 
 project_container = fw.get(analysis_container.parents['project'])
 project_label = project_container.label
