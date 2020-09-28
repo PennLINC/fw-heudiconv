@@ -40,6 +40,48 @@ And then filter your DataFrame as necessary:
 
         return str(replacement)
 
+DataFrames to Strings
+=====================
+
+In order to use the ``AttachTo*()`` function, your data needs to be converted into a string. To attach a data-frame object, use the following steps: 
+
+.. code-block:: python
+
+    def AttachToSession():
+
+        # example: uploading multiple files -- a json, and a TSV
+        import json
+
+        adict = {
+            "id": "04",
+            "name": "foo",
+            "scan": "blah"
+        }
+
+        json_object = json.dumps(adict, indent = 4)
+
+        attachment1 = {
+            'name': 'jsonexample.json',
+            'data': json_object,
+            'type': 'application/json'
+        }
+        import pandas as pd
+        raw_data = {'first_name': ['Jason', 'Molly', 'Tina', 'Jake', 'Amy'],
+            'last_name': ['Miller', 'Jacobson', 'Ali', 'Milner', 'Cooze'],
+            'age': [42, 52, 36, 24, 73],
+            'preTestScore': [4, 24, 31, 2, 3],
+            'postTestScore': [25, 94, 57, 62, 70]}
+        df = pd.DataFrame(raw_data, columns = ['first_name', 'last_name', 'age', 'preTestScore', 'postTestScore'])
+
+        attachment2 = {
+            'name': '{subject}/{session}/perf/{subject}_{session}_aslcontext.tsv',
+            'data': df.to_csv(index=False, sep='\t'), # .to_csv() with no file argument returns a string!
+            'type': 'text/tab-separated-values'
+        }
+
+        # this is also an opportunity to demonstrate how to attach multiple files -- just use a list!
+        return [attachment1, attachment2]
+
 Arterial Spin Labelling Data
 ============================
 
@@ -94,45 +136,3 @@ This could be especially useful if you don't want to rely on external data files
 You can find out the correct number of LABEL-CONTROL pairs from the DICOM header info found in the output of ``fw-heudiconv-tabulate``,
 which will also help you hard code the extra ASL metadata and insert it into the ``MetadataExtras`` variable.
 
-DataFrames to Strings
-=====================
-
-Since the ``AttachTo*()`` functions can only return string data, how would you attach
-a DataFrame object? It's pretty simple actually:
-
-.. code-block:: python
-
-    def AttachToSession():
-
-        # example: uploading multiple files -- a json, and a TSV
-        import json
-
-        adict = {
-            "id": "04",
-            "name": "foo",
-            "scan": "blah"
-        }
-
-        json_object = json.dumps(adict, indent = 4)
-
-        attachment1 = {
-            'name': 'jsonexample.json',
-            'data': json_object,
-            'type': 'application/json'
-        }
-        import pandas as pd
-        raw_data = {'first_name': ['Jason', 'Molly', 'Tina', 'Jake', 'Amy'],
-            'last_name': ['Miller', 'Jacobson', 'Ali', 'Milner', 'Cooze'],
-            'age': [42, 52, 36, 24, 73],
-            'preTestScore': [4, 24, 31, 2, 3],
-            'postTestScore': [25, 94, 57, 62, 70]}
-        df = pd.DataFrame(raw_data, columns = ['first_name', 'last_name', 'age', 'preTestScore', 'postTestScore'])
-
-        attachment2 = {
-            'name': '{subject}/{session}/perf/{subject}_{session}_aslcontext.tsv',
-            'data': df.to_csv(index=False, sep='\t'), # .to_csv() with no file argument returns a string!
-            'type': 'text/tab-separated-values'
-        }
-
-        # this is also an opportunity to demonstrate how to attach multiple files -- just use a list!
-        return [attachment1, attachment2]
