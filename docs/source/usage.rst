@@ -3,11 +3,7 @@ Usage
 **************
 
 ``fw-heudiconv`` can be run either from the command line, or on Flywheel as a gear.
-See below for command line instructions
-
-Example: ::
-
-    fw-heudiconv-* --args
+See below for command line instructions. 
 
 
 Tabulate
