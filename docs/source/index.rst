@@ -12,9 +12,9 @@ Contents
    :maxdepth: 2
    :caption: Contents:
 
-   installation
-   quickstart
    overview
+   quickstart
+   installation
    usage
    heuristic
    tips
