@@ -1,6 +1,5 @@
-**********************************
 BIDS & ``fw-heudiconv`` Explained
-**********************************
+==================================
 
 Flywheel HeuDiConv (``fw-heudiconv``) is based on the popular ``heudiconv`` software,
 "flexible DICOM converter for organizing brain imaging data into structured
@@ -27,7 +26,7 @@ The goal of ``fw-heudiconv`` is to provide researchers with a tool to flexibly a
 curate their Flywheel datasets into BIDS, that is as powerful as it is easy to use.
 
 General Workflow
-================
+----------------
 
 In ``fw-heudiconv``, the general workflow is as follows:
 

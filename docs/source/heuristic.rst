@@ -13,7 +13,7 @@ but in order to communicate with Flywheel, ``fw-heudiconv`` expects a few
 reserved functions and data structures. These functions are documented below.
 
 How ``fw-heudiconv`` Uses a Heuristic
-=====================================
+-------------------------------------
 Once ``fw-heudiconv`` has parsed arguments and filtered out the target sessions
 to curate, ``fw-heudiconv`` then gathers all of the DICOM header information in
 a session's acquisitions. In the program, we call these objects ``seqinfo`` objects.
@@ -24,11 +24,13 @@ At the end of the checks, ``fw-heudiconv`` goes through the list of references,
 adding BIDS metadata to each of the NIfTIs the references point to.
 
 Heuristic Functions
-===================
+-------------------
 This heuristic demonstrates all of the functionalities available in fw-heudiconv
 data curation.
+
 Mandatory functions
--------------------
+^^^^^^^^^^^^^^^^^^^^
+
 There are two mandatory functions that are expected in a heuristic. The first is
 the :func:`create_key` function. This function allows the heuristic to define BIDS-
 valid filenames for each scan type and category you expect to find. Once defined,
@@ -43,7 +45,7 @@ it is going to be assigned to a BIDS key.
 .. autofunction:: fw_heudiconv.example_heuristics.demo.infotodict
 
 Optional variables
-------------------
+^^^^^^^^^^^^^^^^^^^
 There are optional variables you can use to hardcode metadata into the BIDS sidecar
 or define fieldmap intentions (:data:`MetadataExtras` and :data:`IntendedFor`).
 
@@ -52,7 +54,7 @@ or define fieldmap intentions (:data:`MetadataExtras` and :data:`IntendedFor`).
 .. autodata:: fw_heudiconv.example_heuristics.demo.IntendedFor
 
 ``Replace*`` functions
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 There are optional functions that assist with Flywheel-specific data
 manipulation. The first of these is the :func:`ReplaceSubject` and :func:`ReplaceSession`
 functions, which can be used to manipulate the label of a Flywheel object before
@@ -66,13 +68,14 @@ the source data objects on Flywheel, only the metadata BIDS fields.
 .. autofunction:: fw_heudiconv.example_heuristics.demo.ReplaceSession
 
 ``Attach*`` functions
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 Then there are the :func:`AttachToProject` and :func:`AttachToSession` functions, which
 are used to dynamically generate and upload BIDS metadata files, like participant
 or event files. We've found these functions useful for generating and uploading
 ASL context files, but can be used for any dynamic file attachment purpose,
 so long as the data can be parsed into a raw text string.
-'''
+
+
 .. autofunction:: fw_heudiconv.example_heuristics.demo.AttachToSession
 
 .. autofunction:: fw_heudiconv.example_heuristics.demo.AttachToProject

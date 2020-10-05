@@ -1,6 +1,5 @@
-**************
 Installation
-**************
+=============
 
 
 Follow instructions below to set up your system for using ``fw-heudiconv`` on your machine

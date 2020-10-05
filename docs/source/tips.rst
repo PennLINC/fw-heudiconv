@@ -1,6 +1,5 @@
-***********************************
 Tips & Tricks: Curating Creatively
-***********************************
+===================================
 
 Because ``fw-heudiconv`` is built in Python, you have access to anything Python
 can do when you build your heuristic (as long as you use the special functions
@@ -8,7 +7,7 @@ and data structures). Here, we show a few fun ways we've used Python to solve
 a few tricky heuristic challenges.
 
 Dynamically Replacing Subject/Session Labels
-============================================
+---------------------------------------------
 
 It might be useful to dynamically replace a Flywheel subject's label with some
 other label in BIDS — for example, in the event that you need to withhold personally
@@ -41,9 +40,9 @@ And then filter your DataFrame as necessary:
         return str(replacement)
 
 DataFrames to Strings
-=====================
+----------------------
 
-In order to use the ``AttachTo*()`` function, your data needs to be converted into a string. To attach a data-frame object, use the following steps: 
+In order to use the ``AttachTo*()`` function, your data needs to be converted into a string. To attach a data-frame object, use the following steps:
 
 .. code-block:: python
 
@@ -83,7 +82,7 @@ In order to use the ``AttachTo*()`` function, your data needs to be converted in
         return [attachment1, attachment2]
 
 Arterial Spin Labelling Data
-============================
+-----------------------------
 
 ASL is a BIDS protocol proposal that is fast on its way to being accepted into
 the official BIDS spec, but is still being reviewed and updated. At present,
@@ -135,4 +134,3 @@ cleverer and instead dynamically create this file:
 This could be especially useful if you don't want to rely on external data files to curate your project.
 You can find out the correct number of LABEL-CONTROL pairs from the DICOM header info found in the output of ``fw-heudiconv-tabulate``,
 which will also help you hard code the extra ASL metadata and insert it into the ``MetadataExtras`` variable.
-

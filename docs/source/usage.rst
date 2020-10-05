@@ -1,13 +1,12 @@
-**************
 Usage
-**************
+=====
 
 ``fw-heudiconv`` can be run either from the command line, or on Flywheel as a gear.
-See below for command line instructions. 
+See below for command line instructions.
 
 
 Tabulate
-==========
+--------
 
 .. argparse::
   :ref: tabulate
@@ -16,7 +15,7 @@ Tabulate
   :prog: fw-heudiconv-tabulate
 
 Curate
-==========
+------
 
 .. argparse::
   :ref: curate
@@ -25,7 +24,7 @@ Curate
   :prog: fw-heudiconv-curate
 
 Export
-==========
+------
 
 .. argparse::
   :ref: export
@@ -34,7 +33,7 @@ Export
   :prog: fw-heudiconv-export
 
 Validate
-==========
+--------
 
 .. argparse::
   :ref: validate
@@ -43,7 +42,7 @@ Validate
   :prog: fw-heudiconv-validate
 
 Clear
-==========
+-----
 
 .. argparse::
   :ref: clear
