@@ -132,7 +132,10 @@ def apply_heuristic(client, heur, acquisition_id, dry_run=False, intended_for=[]
         if metadata_extras:
             logger.debug("%s metadata: %s", f.name, metadata_extras)
             if not dry_run:
-                acquisition_object.update_file_info(f.name, metadata_extras)
+                old_metadata = get_metadata_from_acq(client, acquisition_object, f.name)
+                new_metadata = old_metadata.copy()
+                new_metadata.update(metadata_extras)
+                acquisition_object.update_file_info(f.name, new_metadata)
 
 
 def add_empty_bids_fields(folder, fname=None):
@@ -481,3 +484,11 @@ def parse_validator(path):
         df = df.append(parsed, ignore_index=True)
 
     return df
+
+def get_metadata_from_acq(client, acq, filename):
+
+    acq = client.get(acq.id)
+
+    target_file = [f for f in acq.files if f.name == filename][0]
+
+    return target_file['info']
