@@ -1,6 +1,5 @@
-**************
 Installation
-**************
+=============
 
 
 Follow instructions below to set up your system for using ``fw-heudiconv`` on your machine
@@ -55,7 +54,7 @@ Download ``fw-heudiconv`` from pip
 
 The ``fw-heudiconv`` code is hosted on pip: **pip is a standard package-management system used to install and manage software packages written in Python**
 
-Pip should be installed with your new environment, but you can ensure you have it by doing: ::
+Pip should be installed with your new environment, but you can ensure you have it by running: ::
 
     $ which pip
 
@@ -63,14 +62,17 @@ Now, use pip to install ``fw-heudiconv``: ::
 
     $ pip install fw-heudiconv
 
-Download the Flywheel CLI & login
+Download the Flywheel SDK & CLI
 ---------------------------------
 
-The flywheel CLI allows ``fw-heudiconv`` (or any other program you write) to communicate with Flywheel’s database. Follow their instructions here:
+You will need to download the flywheel software development kit in order to use ``fw-heudiconv``. Follow the instructions `here <https://pypi.org/project/flywheel-sdk/>`_ to install, or run:  ::
 
-https://docs.flywheel.io/hc/en-us/articles/360008162214
+    $ pip install flywheel-sdk
 
-Once installed and logged in, you should see your username when you do: ::
+
+The flywheel CLI allows ``fw-heudiconv`` (or any other program you write) to communicate with Flywheel’s database. Follow their instructions `here <https://docs.flywheel.io/hc/en-us/articles/360008162214>`_ to download and login.
+
+Once installed and logged in, you should see your username when you run the following: ::
 
     $ fw status
     $ You are currently logged in as Tinashe Tapera to https://upenn.flywheel.io
@@ -79,7 +81,7 @@ Once installed and logged in, you should see your username when you do: ::
 Updating ``fw-heudiconv``
 --------------------------
 
-If you already have ``fw-heudiconv`` and wish to update to the latest version, just do: ::
+If you already have ``fw-heudiconv`` and wish to update to the latest version, just run: ::
 
     $ pip install --upgrade fw-heudiconv
 
@@ -88,4 +90,4 @@ Appendix — ``fw-heudiconv-validate``
 
 ``fw-heudiconv-validate`` is a convenience tool that wraps the official Bids Validator and pipes the output of ``fw-heudiconv-export`` to it. It's most useful for validating Flywheel data through a gear on the GUI.
 
-To use ``fw-heuduiconv-validate`` on your local machine, you need to install `node.js <https://nodejs.org/en/>`_. This is not necessary, however, and instead you are welcome to use ``fw-heudiconv-validate`` on your Flywheel site, or, use ``fw-heudiconv-export`` to export data first, and then use the official Bids Validator available [here](http://bids-standard.github.io/bids-validator/)
+To use ``fw-heuduiconv-validate`` on your local machine, you need to install `node.js <https://nodejs.org/en/>`_. This is not necessary, however, and instead you are welcome to use ``fw-heudiconv-validate`` on your Flywheel site, or, use ``fw-heudiconv-export`` to export data first, and then use the official Bids Validator available `here <http://bids-standard.github.io/bids-validator/>`_.

@@ -7,28 +7,79 @@ Like the name implies, a heuristic is a set of simple and efficient rules that,
 for our purposes, will help map DICOM header info to a BIDS-valid filename.
 
 The heuristic's rules are defined in a Python file which is used as input to the
-curate command line tool :mod:`fw_heudiconv.cli.curate`. Since it's Python, it's
+curate command line tool :mod:`fw_heudiconv.cli.curate`. Using Python, it's
 possible to accomplish a wide variety of logical operations to define these relationships,
 but in order to communicate with Flywheel, ``fw-heudiconv`` expects a few
 reserved functions and data structures. These functions are documented below.
 
-.. automodule:: fw_heudiconv.example_heuristics.demo
+How ``fw-heudiconv`` Uses a Heuristic
+-------------------------------------
+Once ``fw-heudiconv`` has parsed arguments and filtered out the target sessions
+to curate, ``fw-heudiconv`` then gathers all of the DICOM header information in
+a session's acquisitions. In the program, we call these objects ``seqinfo`` objects.
+The program loops over each of these ``seqinfo`` objects and tests each
+one to see if the heuristic has defined a BIDS filename for a ``seqinfo`` of this
+type. If so, it adds a reference to this ``seqinfo`` to a special internal list.
+At the end of the checks, ``fw-heudiconv`` goes through the list of references,
+adding BIDS metadata to each of the NIfTIs the references point to.
+
+Heuristic Functions
+-------------------
+This heuristic demonstrates all of the functionalities available in fw-heudiconv
+data curation.
+
+Mandatory functions
+^^^^^^^^^^^^^^^^^^^^
+
+There are two mandatory functions that are expected in a heuristic. The first is
+the :func:`create_key` function. This function allows the heuristic to define BIDS-
+valid filenames for each scan type and category you expect to find. Once defined,
+you can then assign keys to variables to be used in the next mandatory function.
 
 .. autofunction:: fw_heudiconv.example_heuristics.demo.create_key
 
+The next mandatory function is :func:`infotodict`. This function does the heavy lifting —
+it loops over the ``seqinfo`` objects, and uses boolean logic in each to decide if
+it is going to be assigned to a BIDS key.
+
 .. autofunction:: fw_heudiconv.example_heuristics.demo.infotodict
+
+Optional variables
+^^^^^^^^^^^^^^^^^^^
+There are optional variables you can use to hardcode metadata into the BIDS sidecar
+or define fieldmap intentions (:data:`MetadataExtras` and :data:`IntendedFor`).
 
 .. autodata:: fw_heudiconv.example_heuristics.demo.MetadataExtras
 
 .. autodata:: fw_heudiconv.example_heuristics.demo.IntendedFor
 
+``Replace*`` functions
+^^^^^^^^^^^^^^^^^^^^^^^
+There are optional functions that assist with Flywheel-specific data
+manipulation. The first of these is the :func:`ReplaceSubject` and :func:`ReplaceSession`
+functions, which can be used to manipulate the label of a Flywheel object before
+it is inserted into a BIDS filename (for example, to remove leading zeroes).
+These functions are expected to have a string as input (the Flywheel label) and
+the return object to be a string of your making. These functions *don't* affect
+the source data objects on Flywheel, only the metadata BIDS fields.
+
 .. autofunction:: fw_heudiconv.example_heuristics.demo.ReplaceSubject
 
 .. autofunction:: fw_heudiconv.example_heuristics.demo.ReplaceSession
 
+``Attach*`` functions
+^^^^^^^^^^^^^^^^^^^^^^^
+Then there are the :func:`AttachToProject` and :func:`AttachToSession` functions, which
+are used to dynamically generate and upload BIDS metadata files, like participant
+or event files. We've found these functions useful for generating and uploading
+ASL context files, but can be used for any dynamic file attachment purpose,
+so long as the data can be parsed into a raw text string.
+
+
 .. autofunction:: fw_heudiconv.example_heuristics.demo.AttachToSession
 
 .. autofunction:: fw_heudiconv.example_heuristics.demo.AttachToProject
+
 
 A Real Example
 ---------------
