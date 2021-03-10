@@ -38,8 +38,6 @@ To **export the dataset** into BIDS for downloading to your machine: In the "Gea
 
 1. Have the `flaudit` gear installed on your Flywheel instance.
 
-2. Select a `template subject` -- an ideal subject who you know has been curated
-correctly and has had all the required preprocessing gears run on them. Input this
-subject ID in the ``Template`` field in the config.
+2. Select a `template subject` -- an ideal subject who you know has been curated correctly and has had all the required preprocessing gears run on them. Input this subject ID in the ``Template`` field in the config.
 
 3. Hit Run!
