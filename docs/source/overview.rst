@@ -1,5 +1,7 @@
-BIDS & ``fw-heudiconv`` Explained
+BIDS & FlywheelTools Explained
 ==================================
+
+FlywheelTools consists of two tools — ``fw-heudiconv`` and ``flaudit``.
 
 Flywheel HeuDiConv (``fw-heudiconv``) is based on the popular ``heudiconv`` software,
 "flexible DICOM converter for organizing brain imaging data into structured
@@ -24,6 +26,24 @@ BIDS-ready processing and analysis pipelines, officially called BIDS apps.
 
 The goal of ``fw-heudiconv`` is to provide researchers with a tool to flexibly and reproducibly
 curate their Flywheel datasets into BIDS, that is as powerful as it is easy to use.
+
+When you're done, you can use ``flaudit`` to audit your data and make sure
+everything went as planned. ``flaudit`` is a containerized gear on Flywheel that
+loops over the data in your project, and collects data about the sequences that
+exist in the project, if and how they were curated into BIDS, and if analysis
+gears were run on them. One important feature is the inclusion of a
+`template subject`. When specified, ``flaudit`` will use that subject's data as
+a gold standard and compare each other subject to them, highlighting:
+
+- If the subject has collected the same scanning sequences as the template
+- If the subject has been curated into BIDS identically to the template
+- If the subject has run the same analysis gears as the template. This comparison
+is sensitive to gear versions, so you can be sure your subjects ran the same
+version of algorithms as the template.
+
+The output of the gear is an HTML report that can be opened in your web browser,
+as well as the accompanying CSVs that generated it, in case you want to explore
+the data further.
 
 General Workflow
 ----------------

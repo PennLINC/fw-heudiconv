@@ -1,8 +1,8 @@
-``fw-heudiconv`` Quick start guide
+Quick start guide
 ==================================
 
-Command Line
-------------
+``fw-heudiconv`` at the Command Line
+------------------------------------
 
 1. Make sure you have the Flywheel `CLI <https://docs.flywheel.io/hc/en-us/articles/360008162214-Installing-the-Command-Line-Interface-CLI->`_ and `SDK <https://pypi.org/project/flywheel-sdk/>`_ installed. Note that this is ``flywheel-sdk`` and **NOT** ``flywheel``.
 
@@ -18,8 +18,8 @@ To **export the dataset** to your machine: ``fw-heudiconv-export --project <MY_P
 
 Use the ``--subject <SUBJECT>`` and/or ``--session <SESSION>`` flags to use the tool on specific subject/session labels.
 
-Flywheel Gear
--------------
+``fw-heudiconv`` as a Flywheel Gear
+-----------------------------------
 
 1. Have the `Flywheel Heudiconv` gear installed on your Flywheel instance.
 
@@ -32,3 +32,14 @@ To **list the sequence information** for your dataset: In the "Gear Configuratio
 To **curate the dataset** into BIDS: In the "Gear Configuration" window, type "Curate" in the "Action" field, which will curate the dataset for BIDS. Click the "dry run" button to test your heuristic first (the gear log will print out all the changes without applying them).
 
 To **export the dataset** into BIDS for downloading to your machine: In the "Gear Configuration" window, type "Export" in the "Action" field, which will leave an exported BIDS dataset in the gear's outputs. Click the "dry run" button to test your output first (the gear log will print out the expected directory structure of an export).
+
+``flaudit`` as a Flywheel Gear
+------------------------------
+
+1. Have the `flaudit` gear installed on your Flywheel instance.
+
+2. Select a `template subject` -- an ideal subject who you know has been curated
+correctly and has had all the required preprocessing gears run on them. Input this
+subject ID in the ``Template`` field in the config.
+
+3. Hit Run!

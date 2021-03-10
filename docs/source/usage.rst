@@ -49,3 +49,8 @@ Clear
   :module: fw_heudiconv.cli.clear
   :func: get_parser
   :prog: fw-heudiconv-clear
+
+flaudit
+-------
+
+``flaudit`` runs as a gear on Flywheel. See the Quick Start guide for usage.

@@ -2,7 +2,7 @@ Installation
 =============
 
 
-Follow instructions below to set up your system for using ``fw-heudiconv`` on your machine
+To use locally, follow instructions below to set up your system for using ``fw-heudiconv`` on your machine:
 
 Estimated time: 15 minutes
 

@@ -1,7 +1,10 @@
-fw-heudiconv: Heudiconv-Style BIDS Curation On Flywheel
-=======================================================
+FlywheelTools: Software for Heudiconv-Style BIDS Curation On Flywheel
+=====================================================================
 
-``fw-heudiconv`` is a Python-based tool kit for curating BIDS data on the Flywheel platform.
+``FlywheelTools`` is a suite of software tools for curating your data into BIDS on Flywheel. It's comprised of 2 parts:
+
+``fw-heudiconv``, which is a Python-based tool kit for curating BIDS data on the
+Flywheel platform, and ``flaudit``, which is a Flywheel project auditor.
 
 .. image:: https://readthedocs.org/projects/fw-heudiconv/badge/?version=latest
   :target: http://fw-heudiconv.readthedocs.io/en/latest/?badge=latest

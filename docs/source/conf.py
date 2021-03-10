@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'fw-heudiconv'
+project = 'Flywheel Tools'
 copyright = '2020, Tinashe M. Tapera, Matt Cieslak, PhD'
 author = 'Tinashe M. Tapera, Matt Cieslak, PhD'
 
