@@ -11,3 +11,5 @@ Flywheel platform, and ``flaudit``, which is a Flywheel project auditor.
   :alt: Documentation Status
 
 Full documentation at `readthedocs <http://fw-heudiconv.readthedocs.io/en/latest>`_
+
+See our code on `Github <https://github.com/PennLINC/fw-heudiconv`_
