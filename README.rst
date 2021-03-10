@@ -1,5 +1,5 @@
-FlywheelTools: Software for Heudiconv-Style BIDS Curation On Flywheel
-=====================================================================
+FlywheelTools: Data Curation & Manipulation on the Flywheel Platform
+====================================================================
 
 ``FlywheelTools`` is a suite of software tools for curating your data into BIDS on Flywheel. It's comprised of 2 parts:
 
