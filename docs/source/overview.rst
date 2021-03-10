@@ -39,9 +39,7 @@ a gold standard and compare each other subject to them, highlighting:
 
 - If the subject has collected the same scanning sequences as the template
 - If the subject has been curated into BIDS identically to the template
-- If the subject has run the same analysis gears as the template. This comparison
-is sensitive to gear versions, so you can be sure your subjects ran the same
-version of algorithms as the template.
+- If the subject has run the same analysis gears as the template. This comparison is sensitive to gear versions, so you can be sure your subjects ran the same version of algorithms as the template.
 
 The output of the gear is an HTML report that can be opened in your web browser,
 as well as the accompanying CSVs that generated it, in case you want to explore
