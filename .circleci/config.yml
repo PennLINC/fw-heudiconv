@@ -61,8 +61,8 @@ jobs:
             pip install .[all]
 
       - run:
-        name: pytests
-        command: |
+          name: pytests
+          command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
             pytest -v --cov testing/
