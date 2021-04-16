@@ -40,13 +40,13 @@ jobs:
 
             # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip
             cd /tmp
+            mkdir -p /tmp/fw_cli && \
+            cd /tmp/fw_cli
             wget https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip -O fw-bin.zip
             unzip fw-bin.zip
-            cd linux_amd64
-            mv ./fw /usr/local/bin
-            which fw
+            mv /tmp/fw_cli/linux_amd64/fw /tmp/fw_cli
             echo $FWAPIKEY
-            fw login $FWAPIKEY
+            ./fw login $FWAPIKEY
 
 
       # install package & run pytest
