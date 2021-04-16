@@ -38,16 +38,11 @@ jobs:
             yarn --ignore-engines && \
             cd bids-validator && npm install -g
 
-      # install package
+      # install package & run pytest
       - run:
-          name: Install fwheudiconv
+          name: Install fwheudiconv and pytest
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
             pip install .[all]
-      # Step 3: run pytests
-      - run:
-          name: run tests
-          command: |
-            source activate flywheel
             pytest -v --cov testing/
