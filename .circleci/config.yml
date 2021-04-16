@@ -44,16 +44,20 @@ jobs:
             cd /tmp/fw_cli
             wget https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip -O fw-bin.zip
             unzip fw-bin.zip
-            mv /tmp/fw_cli/linux_amd64/fw /tmp/fw_cli
-            echo $FWAPIKEY
-            ./fw login $FWAPIKEY
-            sudo mv ./fw /usr/local/bin
+            sudo mv /tmp/fw_cli/linux_amd64/fw /usr/local/bin
+
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - miniconda
+            - validator
 
 
       # install package & run pytest
       - run:
           name: Install fwheudiconv and pytest
           command: |
+            fw login $FWAPIKEY
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
             pip install .[all]
