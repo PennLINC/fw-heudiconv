@@ -53,7 +53,7 @@ jobs:
 
       # install package & run pytest
       - run:
-          name: Install fwheudiconv and pytest
+          name: Login & Install fwheudiconv
           command: |
             fw login $FWAPIKEY
             export PATH=/tmp/miniconda/bin:$PATH
@@ -71,12 +71,21 @@ jobs:
       - run:
           name: test clear
           command: |
-            export PATH=/tmp/miniconda/bin:$PATH
+
             source activate flywheel
 
             fw-heudiconv-clear --project gear_testing \
-                --subject 86486 \
-                --dry-run
+                --subject 86486
+
+      - run:
+          name: test tabulate
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            fw-heudiconv-tabulate --project gear_testing \
+                --subject 86486 --path /tmp/tabulate
+
       - run:
           name: test curate
           command: |
@@ -84,5 +93,22 @@ jobs:
             source activate flywheel
 
             fw-heudiconv-curate --project gear_testing \
-                --subject 86486 --heuristic testing/grmpy_heuristic_testing.py \
-                --dry-run
+                --subject 86486 --heuristic testing/grmpy_heuristic_testing.py
+
+      - run:
+          name: test export
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            fw-heudiconv-export --project gear_testing \
+                --subject 86486 --destination /tmp/export
+
+      - run:
+          name: test validate
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            fw-heudiconv-validate --project gear_testing \
+                --subject 86486 --directory /tmp/validation
