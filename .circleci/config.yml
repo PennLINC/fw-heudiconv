@@ -37,7 +37,6 @@ jobs:
             cd /tmp/validator/bids-validator && \
             yarn --ignore-engines && \
             cd bids-validator && npm install -g
-
             # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip
             cd /tmp
             mkdir -p /tmp/fw_cli && \
@@ -45,7 +44,6 @@ jobs:
             wget https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip -O fw-bin.zip
             unzip fw-bin.zip
             sudo mv /tmp/fw_cli/linux_amd64/fw /usr/local/bin
-
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -61,18 +59,30 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
             pip install .[all]
+
+      - run:
+        name: pytests
+        command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
             pytest -v --cov testing/
 
       # test command line functions
       - run:
-          name: test command line
+          name: test clear
           command: |
-            # test curate
-            fw login $FWAPIKEY
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
-            pip install .[all]
-            
+
+            fw-heudiconv-clear --project gear_testing \
+                --subject 86486 \
+                --dry-run
+      - run:
+          name: test curate
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
             fw-heudiconv-curate --project gear_testing \
                 --subject 86486 --heuristic testing/grmpy_heuristic_testing.py \
                 --dry-run
