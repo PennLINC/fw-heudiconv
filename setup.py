@@ -21,7 +21,9 @@ setuptools.setup(
         "pandas",
         "bids-validator",
         "validators",
-        "pathvalidate"
+        "pathvalidate",
+        "pytest",
+        "pytest-cov"
     ],
     classifiers=[
         "Programming Language :: Python :: 3.6",
