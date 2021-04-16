@@ -38,6 +38,17 @@ jobs:
             yarn --ignore-engines && \
             cd bids-validator && npm install -g
 
+            # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip
+            cd /tmp
+            wget https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip -O fw-bin.zip
+            unzip fw-bin.zip
+            cd linux_amd64
+            mv ./fw /usr/local/bin
+            which fw
+            echo $FWAPIKEY
+            fw login $FWAPIKEY
+
+
       # install package & run pytest
       - run:
           name: Install fwheudiconv and pytest
