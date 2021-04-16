@@ -47,7 +47,7 @@ jobs:
             mv /tmp/fw_cli/linux_amd64/fw /tmp/fw_cli
             echo $FWAPIKEY
             ./fw login $FWAPIKEY
-            mv ./fw /usr/bin
+            sudo mv ./fw /usr/local/bin
 
 
       # install package & run pytest
