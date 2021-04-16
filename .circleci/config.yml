@@ -62,3 +62,12 @@ jobs:
             source activate flywheel
             pip install .[all]
             pytest -v --cov testing/
+
+      # test command line functions
+      - run:
+          name: test command line
+          command: |
+            # test curate
+            fw-heudiconv-curate --project gear_testing \
+                --subject 86486 --heuristic testing/grmpy_heuristic_testing.py \
+                --dry-run
