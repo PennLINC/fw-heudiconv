@@ -1,4 +1,4 @@
-FlywheelTools: Software for Heudiconv-Style BIDS Curation On Flywheel
+FlywheelTools: Software for HeuDiConv-Style BIDS Curation On Flywheel
 =====================================================================
 
 .. image:: https://readthedocs.org/projects/fw-heudiconv/badge/?version=latest
