@@ -68,6 +68,11 @@ jobs:
           name: test command line
           command: |
             # test curate
+            fw login $FWAPIKEY
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+            pip install .[all]
+            
             fw-heudiconv-curate --project gear_testing \
                 --subject 86486 --heuristic testing/grmpy_heuristic_testing.py \
                 --dry-run
