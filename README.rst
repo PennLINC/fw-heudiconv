@@ -10,4 +10,7 @@ Flywheel platform, and ``flaudit``, which is a Flywheel project auditor.
   :target: http://fw-heudiconv.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
 
+.. image:: https://circleci.com/gh/pennlinc/fw-heudiconv.svg?style=svg
+    :target: https://circleci.com/gh/pennlinc/fw-heudiconv
+
 Full documentation at `readthedocs <http://fw-heudiconv.readthedocs.io/en/latest>`_
