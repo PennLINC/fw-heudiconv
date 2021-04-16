@@ -84,6 +84,8 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
 
+            mkdir /tmp/tabulate
+
             fw-heudiconv-tabulate --project gear_testing \
                 --subject $SUBJECT --path /tmp/tabulate
 
@@ -102,6 +104,8 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
 
+            mkdir /tmp/export
+
             fw-heudiconv-export --project gear_testing \
                 --subject $SUBJECT --destination /tmp/export
 
@@ -111,5 +115,7 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
 
+            mkdir /tmp/validation
+            
             fw-heudiconv-validate --project gear_testing \
                 --subject $SUBJECT --directory /tmp/validation
