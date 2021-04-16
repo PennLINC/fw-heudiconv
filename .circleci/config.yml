@@ -5,6 +5,7 @@ jobs:
     environment:
       TZ: "/usr/share/zoneinfo/America/New_York"
       SCRATCH: "/scratch"
+      SUBJECT: 86486
     docker:
       - image: circleci/python:3.7
 
@@ -37,7 +38,6 @@ jobs:
             cd /tmp/validator/bids-validator && \
             yarn --ignore-engines && \
             cd bids-validator && npm install -g
-
             # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip
             cd /tmp
             mkdir -p /tmp/fw_cli && \
@@ -45,7 +45,6 @@ jobs:
             wget https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip -O fw-bin.zip
             unzip fw-bin.zip
             sudo mv /tmp/fw_cli/linux_amd64/fw /usr/local/bin
-
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -55,10 +54,68 @@ jobs:
 
       # install package & run pytest
       - run:
-          name: Install fwheudiconv and pytest
+          name: Login & Install fwheudiconv
           command: |
             fw login $FWAPIKEY
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
             pip install .[all]
+
+      - run:
+          name: pytests
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
             pytest -v --cov testing/
+
+      # test command line functions
+      - run:
+          name: test clear
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            fw-heudiconv-clear --project gear_testing \
+                --subject $SUBJECT
+
+      - run:
+          name: test tabulate
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            mkdir /tmp/tabulate
+
+            fw-heudiconv-tabulate --project gear_testing \
+                --subject $SUBJECT --path /tmp/tabulate
+
+      - run:
+          name: test curate
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            fw-heudiconv-curate --project gear_testing \
+                --subject $SUBJECT --heuristic testing/grmpy_heuristic_testing.py
+
+      - run:
+          name: test export
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            mkdir /tmp/export
+
+            fw-heudiconv-export --project gear_testing \
+                --subject $SUBJECT --destination /tmp/export
+
+      - run:
+          name: test validate
+          command: |
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            mkdir /tmp/validation
+            
+            fw-heudiconv-validate --project gear_testing \
+                --subject $SUBJECT --directory /tmp/validation
