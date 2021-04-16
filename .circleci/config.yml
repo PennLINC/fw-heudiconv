@@ -43,11 +43,11 @@ jobs:
           name: Install fwheudiconv
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
-            conda activate flywheel
+            source activate flywheel
             pip install .[all]
       # Step 3: run pytests
       - run:
           name: run tests
           command: |
-            conda activate flywheel
+            source activate flywheel
             pytest -v --cov testing/
