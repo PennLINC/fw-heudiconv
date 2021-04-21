@@ -14,3 +14,5 @@ FlywheelTools: Software for HeuDiConv-Style BIDS Curation On Flywheel
 Flywheel platform, and ``flaudit``, which is a Flywheel project auditor.
 
 Full documentation at `readthedocs <http://fw-heudiconv.readthedocs.io/en/latest>`_
+
+License: BS3-D
