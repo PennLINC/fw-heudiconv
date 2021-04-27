@@ -60,62 +60,49 @@ jobs:
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
             pip install .[all]
-
       - run:
           name: pytests
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
             pytest -v --cov testing/
-
       # test command line functions
       - run:
           name: test clear
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
-
             fw-heudiconv-clear --project gear_testing \
                 --subject $SUBJECT
-
       - run:
           name: test tabulate
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
-
             mkdir /tmp/tabulate
-
             fw-heudiconv-tabulate --project gear_testing \
                 --subject $SUBJECT --path /tmp/tabulate
-
       - run:
           name: test curate
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
-
             fw-heudiconv-curate --project gear_testing \
                 --subject $SUBJECT --heuristic testing/grmpy_heuristic_testing.py
-
       - run:
           name: test export
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
-
             mkdir /tmp/export
-
             fw-heudiconv-export --project gear_testing \
                 --subject $SUBJECT --destination /tmp/export
-
       - run:
           name: test validate
           command: |
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
-
             mkdir /tmp/validation
-            
+
             fw-heudiconv-validate --project gear_testing \
                 --subject $SUBJECT --directory /tmp/validation
