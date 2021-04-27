@@ -13,10 +13,11 @@ Contents
    :caption: Contents:
 
    overview
-   quickstart
    installation
+   quickstart
    usage
    heuristic
+   stepbystep
    tips
 
 Indices and tables
