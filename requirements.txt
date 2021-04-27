@@ -6,3 +6,5 @@ validators
 sphinx-argparse
 commonmark
 pathvalidate
+pytest
+pytest-cov

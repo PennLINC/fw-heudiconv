@@ -5,232 +5,117 @@ jobs:
     environment:
       TZ: "/usr/share/zoneinfo/America/New_York"
       SCRATCH: "/scratch"
+      SUBJECT: 86486
     docker:
-      - image: docker:18.06.1-ce-git
-    working_directory: /tmp/src/FixelDB
+      - image: circleci/python:3.7
+
+    working_directory: /tmp/src/fw-heudiconv
+
     steps:
       - checkout
       - run:
-          name: Install parallel gzip and python3
+          name: install dependencies
+          # install conda, validator
           command: |
-            apk add --no-cache pigz python3 tar
-      - restore_cache:
-          keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
-            - docker-v1-{{ .Branch }}-
-            - docker-v1-master-
-            - docker-v1-
-          paths:
-            - /tmp/cache/docker.tar.gz
-      - setup_remote_docker
-      - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 30m
-          command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
-      - run:
-          name: Build Docker image
-          no_output_timeout: 3h
-          command: |
-            # Get version, update files.
-            THISVERSION=$( python3 get_version.py )
-            if [[ ${THISVERSION:0:1} == "0" ]] ; then
-              echo "WARNING: latest git tag could not be found"
-              echo "Please, make sure you fetch all tags from upstream with"
-              echo "the command ``git fetch --tags --verbose`` and push"
-              echo "them to your fork with ``git push origin --tags``"
-            fi
-            # Build docker image
-            e=1 && for i in {1..5}; do
-              docker build \
-                --cache-from=pennbbl/fixeldb \
-                --rm=false \
-                -t pennbbl/fixeldb:latest \
-                --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-                --build-arg VCS_REF=`git rev-parse --short HEAD` \
-                --build-arg VERSION="${CIRCLE_TAG:-$THISVERSION}" . \
-              && e=0 && break || sleep 15
-            done && [ "$e" -eq "0" ]
-
-      - run:
-          name: Docker save
-          no_output_timeout: 40m
-          command: |
-            mkdir -p /tmp/cache
-            docker save pennbbl/fixeldb:latest \
-            | pigz -3 > /tmp/cache/docker.tar.gz
-
+            cd /tmp
+            export MINICONDA=/tmp/miniconda
+            export PATH="$MINICONDA/bin:$PATH"
+            wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+            bash miniconda.sh -b -f -p $MINICONDA
+            conda config --set always_yes yes
+            conda update conda
+            conda info -a
+            conda create -n flywheel python=3.7
+            source activate flywheel
+            conda install -c conda-forge -y datalad
+            # Add nodejs and the validator
+            conda install nodejs
+            npm install -g yarn && \
+            mkdir -p /tmp/validator && \
+            cd /tmp/validator && \
+            git clone  -b 'master' --single-branch --depth 1 \
+                --single-branch https://github.com/bids-standard/bids-validator.git  && \
+            cd /tmp/validator/bids-validator && \
+            yarn --ignore-engines && \
+            cd bids-validator && npm install -g
+            # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip
+            cd /tmp
+            mkdir -p /tmp/fw_cli && \
+            cd /tmp/fw_cli
+            wget https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip -O fw-bin.zip
+            unzip fw-bin.zip
+            sudo mv /tmp/fw_cli/linux_amd64/fw /usr/local/bin
       - persist_to_workspace:
           root: /tmp
           paths:
-            - src/FixelDB
+            - miniconda
+            - validator
 
-      - save_cache:
-         key: docker-v1-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
-         paths:
-           - /tmp/cache/docker.tar.gz
 
-  get_data:
-    machine:
-      # Ubuntu 16.04, docker 18.09.3, docker-compose 1.23.1
-      image: ubuntu-1604:201903-01
-    working_directory: /home/circleci/data
-    steps:
-      - restore_cache:
-          keys:
-            - data-v1-{{ .Revision }}
-            - data-v1-
+      # install package & run pytest
+      - run:
+          name: Login & Install fwheudiconv
+          command: |
+            fw login $FWAPIKEY
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+            pip install .[all]
 
       - run:
-          name: Download example group fixel data directory
+          name: pytests
           command: |
-            mkdir -p /tmp/data
-            if [[ ! -d /tmp/data/fixeldata ]]; then
-              wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q \
-                -O fixeldata.tar.gz "https://upenn.box.com/shared/static/a1co6vdi8i4tqt12cjp96glrq32hg3kq.gz"
-              tar xvfz fixeldata.tar.gz -C /tmp/data/
-            else
-              echo "Fixel data was cached"
-            fi
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+            pytest -v --cov testing/
 
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - data
-
-      - save_cache:
-         key: data-v1-{{ epoch }}
-         paths:
-            - /tmp/data
-
-
-  FixelUpload:
-    machine:
-      image: ubuntu-1604:201903-01
-    working_directory: /tmp/data
-    steps:
-      - attach_workspace:
-          at: /tmp
-      - restore_cache:
-          keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
-            - data-v1-{{ .Revision }}
-            - data-v1-
+      # test command line functions
       - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 30m
+          name: test clear
           command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              sudo apt update && sudo apt -y install pigz
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            fw-heudiconv-clear --project gear_testing \
+                --subject $SUBJECT
 
       - run:
-          name: Upload test data
-          no_output_timeout: 2h
+          name: test tabulate
           command: |
-            cp /tmp/src/FixelDB/.circleci/test_cohort.csv /tmp/data/test_cohort.csv
-            sudo chmod a+r /tmp/data/test_cohort.csv
-            docker run --rm -it \
-              -v /tmp/data:/inputs \
-              -v /tmp:/tmp \
-              pennbbl/fixeldb:latest \
-              --relative-root /inputs \
-              --directions-file fixeldata/directions.mif \
-              --index-file fixeldata/index.mif \
-              --cohort-file test_cohort.csv \
-              --output-hdf5 fixels.h5
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
 
-      - store_artifacts:
-          path: /tmp/data/fixels.h5
+            mkdir /tmp/tabulate
 
-  deploy_docker:
-    machine:
-      image: circleci/classic:201711-01
-    working_directory: /tmp/src/FixelDB
-    steps:
-      - checkout:
-          path: /home/circleci/src/FixelDB
+            fw-heudiconv-tabulate --project gear_testing \
+                --subject $SUBJECT --path /tmp/tabulate
+
       - run:
-          name: Check whether build should be skipped
+          name: test curate
           command: |
-            cd /home/circleci/src/FixelDB
-            if [[ "$( git log --format='format:%s' -n 1 $CIRCLE_SHA1 | grep -i -E '^docs?(\(\w+\))?:' )" != "" ]]; then
-              echo "Only docs build"
-              circleci step halt
-            fi
-      - restore_cache:
-          keys:
-            - docker-v1-{{ .Branch }}-{{ .Revision }}
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            fw-heudiconv-curate --project gear_testing \
+                --subject $SUBJECT --heuristic testing/grmpy_heuristic_testing.py
+
       - run:
-          name: Load Docker image layer cache
-          no_output_timeout: 30m
+          name: test export
           command: |
-            docker info
-            set +o pipefail
-            if [ -f /tmp/cache/docker.tar.gz ]; then
-              sudo apt update && sudo apt -y install pigz
-              pigz -d --stdout /tmp/cache/docker.tar.gz | docker load
-              docker images
-            fi
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
+
+            mkdir /tmp/export
+
+            fw-heudiconv-export --project gear_testing \
+                --subject $SUBJECT --destination /tmp/export
+
       - run:
-          name: Deploy to Docker Hub
-          no_output_timeout: 40m
+          name: test validate
           command: |
-            if [[ -n "$DOCKER_PASS" ]]; then
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker tag pennbbl/fixeldb pennbbl/fixeldb:unstable
-              docker push pennbbl/fixeldb:unstable
-              if [[ -n "$CIRCLE_TAG" ]]; then
-                docker push pennbbl/fixeldb:latest
-                docker tag pennbbl/fixeldb pennbbl/fixeldb:$CIRCLE_TAG
-                docker push pennbbl/fixeldb:$CIRCLE_TAG
-              fi
-            fi
+            export PATH=/tmp/miniconda/bin:$PATH
+            source activate flywheel
 
-workflows:
-  version: 2
-  build_test_deploy:
-    jobs:
-      - build:
-          filters:
-            tags:
-              only: /.*/
-
-      - get_data:
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
-            tags:
-              only: /.*/
-
-      - FixelUpload:
-          requires:
-            - get_data
-            - build
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
-            tags:
-              only: /.*/
-
-      - deploy_docker:
-          requires:
-            - FixelUpload
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /.*/
+            mkdir /tmp/validation
+            
+            fw-heudiconv-validate --project gear_testing \
+                --subject $SUBJECT --directory /tmp/validation
