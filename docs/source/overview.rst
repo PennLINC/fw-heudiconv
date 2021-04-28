@@ -11,7 +11,7 @@ to standardise naming conventions within the user's project directory into BIDS.
 This is particularly useful in Flywheel, where curation, pre-processing, and
 analyses are all automated in the context of BIDS.
 
-BIDS stands for Brain Imaging Directory Structure, and is a standard format for
+BIDS stands for Brain Imaging Data Structure, and is a standard format for
 organizing and storing brain imaging data. It's an organisational standard
 that makes it easy to share, collaborate on, and analyse your data. Among many other details,
 BIDS prioritizes having imaging scans located in a nested directory structure,
@@ -23,6 +23,8 @@ stores the image's metadata. Additionally, filenames must adhere to a
 separated by underscores `_`. This makes files very easy to parse by eye, hand, or machine,
 and if a BIDS dataset is valid, it can be used as seamless input into a myriad of
 BIDS-ready processing and analysis pipelines, officially called BIDS apps.
+
+Learn more about BIDS `here <https://heudiconv.readthedocs.io/en/latest/>`_.
 
 The goal of ``fw-heudiconv`` is to provide researchers with a tool to flexibly and reproducibly
 curate their Flywheel datasets into BIDS, that is as powerful as it is easy to use.
@@ -37,9 +39,7 @@ a gold standard and compare each other subject to them, highlighting:
 
 - If the subject has collected the same scanning sequences as the template
 - If the subject has been curated into BIDS identically to the template
-- If the subject has run the same analysis gears as the template. This comparison
-is sensitive to gear versions, so you can be sure your subjects ran the same
-version of algorithms as the template.
+- If the subject has run the same analysis gears as the template. This comparison is sensitive to gear versions, so you can be sure your subjects ran the same version of algorithms as the template.
 
 The output of the gear is an HTML report that can be opened in your web browser,
 as well as the accompanying CSVs that generated it, in case you want to explore
