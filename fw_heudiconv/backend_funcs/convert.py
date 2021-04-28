@@ -327,7 +327,7 @@ def confirm_bids_namespace(project_obj, dry_run):
             bids = {
                 'BIDS': {'Acknowledgements': '',
                 'Authors': [],
-                'BIDSVersion': '1.0.2',
+                'BIDSVersion': '1.6.0',
                 'DatasetDOI': '',
                 'Funding': [],
                 'HowToAcknowledge': '',
