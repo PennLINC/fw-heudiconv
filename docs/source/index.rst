@@ -15,9 +15,9 @@ Contents
    overview
    installation
    quickstart
-   usage
-   heuristic
    stepbystep
+   heuristic
+   usage
    tips
 
 Indices and tables

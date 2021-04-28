@@ -25,16 +25,6 @@
 			"description": "Run without applying changes",
 			"type": "boolean"
 		},
-		#"do_whole_project": {
-		#	"default": false,
-		#	"description": "Run on whole project",
-		#	"type": "boolean"
-		#},
-		#"extended_bids": {
-		#	"default": true,
-		#	"description": "Export/Curate all files instead of just func/fmap/anat/dwi",
-		#	"type": "boolean"
-		#},
 		"default_heuristic": {
 			"default": "",
 			"description": "Use a default heuristic from the HeuDiConv modules [DEPRECATED]",

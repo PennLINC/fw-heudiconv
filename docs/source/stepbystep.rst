@@ -26,7 +26,7 @@ information, we will use ``fw-heudiconv-tabulate`` to generate a `seqinfo table`
 ``fw-heudiconv-tabulate``
 -------------------------
 
-In the Flywheel GUI, from within a project, select the "Analysis" tab:
+In the Flywheel GUI, navigate to your project, and select the "Analysis" tab:
 
 .. image:: project_analysis_view.png
    :width: 1200
@@ -72,7 +72,7 @@ or text editor of choice.
 
 Next, we're going to use this table to curate one of the subjects. Fortunately,
 in the table viewer, we can use a filter to only show data from one subject.
-Here, we pick subject 019459 using the ``patient_id`` column.
+Here, we pick subject 019465 using the ``patient_id`` column.
 
 Developing a Simple Heuristic
 -----------------------------
@@ -135,7 +135,8 @@ The input to this function, ``seqinfo``, is `each row from your seqinfo table`.
 So looping over the object ``seqinfo`` gives you access to each row of your table,
 where the variables in the table are accessed using Python.
 
-In our example above, we access ``series_description`` and check if it contains the
+In our example above, we access ``series_description`` and use Python logic to
+check if it contains the
 string ``MPRAGE``. We know our T1w is the only one that has this string:
 
 .. image:: t1w_highlighted.png
@@ -173,20 +174,179 @@ The heuristic at this point should look like this:
             if "MPRAGE" in s.series_description:
                 info[t1w].append(s.series_id)
 
-      return info
+            # a print line to tell us T1w was not found
+            print("This seqinfo is not the MPRAGE:", s.series_description)
+        return info
+
+.. note::
+   A good habit for debugging is to print out the ``seqinfo`` rows that did not meet
+   any tests and haven't been assigned to a key
+
+
 
 Save this file as ``my_test_heuristic.py`` -- we're going to use it in the next
 section to curate the T1w image!
 
+Curating The First Image with ``fw-heudiconv``
+----------------------------------------------
 
+The first step to curating the data is to upload this file to the Flywheel
+project. Although files can be attached to any object, we recommend attaching
+this to the project so that all other projects can access it easily.
 
-A Real Example
----------------
-In all, a heuristic file could look like this:
+In the Flywheel GUI, access the "Information" tab of the project, and upload
+your heuristic file using the "Upload Attachment" button:
+
+.. image:: upload_attachment.png
+   :width: 1200
+
+Now, we're going to launch a gear on a `single session`. Pick a session from
+the subject we've been developing on (019465 -- in this case, the session is
+9793). Gears run from the session level by default, though it is possible to
+launch them from a subject.
+
+In the top right, click "Run Gear". As before, a dropdown should appear for you
+to select the ``Flywheel HeuDiConv`` gear from the `Analysis Gears` list. This
+time, though, select an input — in the `heuristic` input box, click "Select
+Input". Here' you'll be presented with a drop down to let you pick `which object`
+to look for input files. The hierarchy at the top  shows that it's looking at
+the current session and acquisitions:
+
+.. image:: inputs_dropdown.png
+   :width: 1200
+
+Instead of this, click the `Project label` to select files attached to your
+project, and select your heuristic. In the "Configuration" tab, select "Curate"
+under the "action" option. You can leave the "dry_run" box checked -- we will
+uncheck it after this test run.
+
+When you're ready, hit "Run Gear"! Take note of the analysis' name to refer back
+to  later.
+
+At the command line, this achieved with the following command:
 
 .. code-block:: python
 
-    import os
+    fw-heudiconv-curate --project FlywheelTools_TestData --heuristic PATH/TO/DIRECTORY/my_test_heuristic.py --subject 019465 --session 9793
+
+The Output
+^^^^^^^^^^
+
+Next you can navigate to the output of the gear to see what happened. From within
+the session, click on either the "Analysis" (for strictly any analysis gears
+that have run) or "Provenance" (for a listing of `any` kind of gear that has
+operated on the session) and navigate to your recent ``fw-heudiconv`` analysis.
+From here, select "View Log".
+
+First, there are virtual machine instructions, stuff Flywheel uses to let us
+know what kind of virtual machine the gear ran in. Then, we have initialization
+instructions from ``fw-heudiconv``'s "gear manager":
+
+.. code-block:: python
+
+    Gear Name: fw-heudiconv, Gear Version: 0.2.15_0.3.3
+    Executor: computebbl-31f3d27f, CPU: 8 cores, Memory: 55GB, Disk: 208GB, Swap: 32GB
+    Gear starting...
+
+    INFO: ==============: fw-heudiconv gear manager starting up :===============
+
+    INFO: Calling fw-heudiconv with the following settings:
+    INFO: Project: FlywheelTools_TestData
+    INFO: Subject(s): ['019465']
+    INFO: Session(s): ['9793']
+    INFO: Heuristic: /flywheel/v0/input/heuristic/my_test_heuristic.py
+    INFO: Action: Curate
+    INFO: Dry run: True
+    INFO: Call: fw-heudiconv-curate --verbose --project FlywheelTools_TestData --dry-run --subject 019465 --session 9793 --heuristic /flywheel/v0/input/heuristic/my_test_heuristic.py
+    INFO: =================: fw-heudiconv curator starting up :=================
+
+
+Pay attention to the ``Call`` directive; this prints the command line equivalent
+of what is running in the gear.
+
+Next, the actual ``fw-heudiconv`` outputs. We see that ``fw-heudiconv`` first
+attempts to load your heuristic and then
+lists out all of your ``seqinfo`` objects (the rows from the table in the first part)
+with the ``series_description`` first, followed by other columns:
+
+.. code-block:: python
+
+    INFO: Loading heuristic file...
+    INFO: Heuristic loaded successfully!
+    INFO: Querying Flywheel server...
+    DEBUG: Found project: FlywheelTools_TestData (6075d65d0da0131135e9b471)
+    DEBUG: Found sessions:
+    	9793 (607732a764d3dfc86e6510d4)
+    INFO: Applying heuristic to 9793 (1/1)...
+    DEBUG: Found SeqInfos:
+    Localizer:
+    		[TR=0.0086 TE=0.004 shape=(512, 512, 3, -1) image_type=('ORIGINAL', 'PRIMARY', 'M', 'ND', 'NORM')] (607732a75b936738e644aee8)
+    MPRAGE_TI1100_ipat2:
+  		  [TR=1.81 TE=0.00345 shape=(256, 192, 160, -1) image_type=('ORIGINAL', 'PRIMARY', 'M', 'ND', 'NORM')] (607732a8b9d367cae5e9b0c5)
+    :
+    :
+    :
+
+This is good, as we can confirm the table data with the ``seqinfo`` object the tool
+is using to curate your data. For example, we know there's a DICOM with the
+series description ``MPRAGE_TI1100_ipat2``, and we searched specifically for the
+string ``MPRAGE``. So, did we catch this ``seqinfo``?
+
+.. code-block:: python
+
+    HCP_REST_BOLD_MB8_469:
+      [TR=0.8 TE=0.037 shape=(936, 936, 469, -1) image_type=('ORIGINAL', 'PRIMARY', 'M', 'MB', 'ND', 'MOSAIC')] (607732a864d3dfc86e6510d7)
+
+    DEBUG:
+    MPRAGE_TI1100_ipat2_2.nii.gz
+    	sub-019465_ses-9793_T1w.nii.gz -> sub-019465/ses-9793/anat/sub-019465_ses-9793_T1w.nii.gz
+    INFO: Done!
+    INFO: ===================: Exiting fw-heudiconv curator :===================
+
+Excellent! Now we know that the NIfTI from this DICOM, MPRAGE_TI1100_ipat2_2.nii.gz,
+will be mapped to a file named ``sub-019465_ses-9793_T1w.nii.gz``, and the path
+is listed there too. Additionally, we get printouts of the ``seqinfo`` objects
+that didn't get caught by our logic.
+
+To see our BIDS data before curation, go to the session view and click the "BIDS View"
+toggle; there should be no BIDS data:
+
+.. image:: uncurated.png
+   :width: 1200
+
+Now that we know it works, we can run it again with the "dry_run" box unchecked
+to apply the changes. The only difference should be that the log lets you know
+the changes are being applied:
+
+.. code-block:: python
+
+    HCP_REST_BOLD_MB8_469:
+      [TR=0.8 TE=0.037 shape=(936, 936, 469, -1) image_type=('ORIGINAL', 'PRIMARY', 'M', 'MB', 'ND', 'MOSAIC')] (607732a864d3dfc86e6510d7)
+
+    INFO: Applying changes to files...
+    DEBUG:
+    MPRAGE_TI1100_ipat2_2.nii.gz
+    sub-019465_ses-9793_T1w.nii.gz -> sub-019465/ses-9793/anat/sub-019465_ses-9793_T1w.nii.gz
+    INFO: Done!
+    INFO: ===================: Exiting fw-heudiconv curator :===================
+
+Now, in the session view, hit the "BIDS View" toggle:
+
+.. image:: one_curated.png
+   :width: 1200
+
+We've successfully curated one of our images into BIDS!
+
+Adding More Images
+------------------
+
+By now, it should be clear that as the tool loops over the rows in the
+``seqinfo`` table, you can add all sorts of logic to capture additional ``seqinfo``
+objects and assign them to keys you create. Below, we edit the heuristic and
+add a key for the BOLD data in our project, and use similar logic to assign
+data to the key:
+
+.. code-block:: python
 
     def create_key(template, outtype=('nii.gz',), annotation_classes=None):
         if template is None or not template:
@@ -194,186 +354,130 @@ In all, a heuristic file could look like this:
         return template, outtype, annotation_classes
 
     # Create Keys
-    t1w = create_key(
-       'sub-{subject}/{session}/anat/sub-{subject}_{session}_T1w')
-    t2w = create_key(
-       'sub-{subject}/{session}/anat/sub-{subject}_{session}_T2w')
-    dwi = create_key(
-       'sub-{subject}/{session}/dwi/sub-{subject}_{session}_acq-multiband_dwi')
 
-    # Field maps
+    # anatomical
+    t1w = create_key(
+       'sub-{subject}/ses-{session}/anat/sub-{subject}_ses-{session}_T1w')
+
+    # fMRI scans
+    rest_bbl = create_key(
+      'sub-{subject}/{session}/func/sub-{subject}_{session}_task-rest_acq-BBL_bold')
+
+    # loop over the seqinfo table
+    def infotodict(seqinfo):
+
+        # the dictionary of keys and list of files they correspond to
+        # now contains two scans
+        info = {
+          t1w: [], rest_bbl: []
+        }
+
+        # loop over each row of your seqinfo table
+        for s in seqinfo:
+
+            # if the series description contains "MPRAGE",
+            # add the DICOM identifier to the dictionary
+
+            if "MPRAGE" in s.series_description:
+                info[t1w].append(s.series_id)
+
+            elif "bbl1_restbold" in protocol:
+                info[rest_bbl].append(s.series_id)
+
+            # a print line to tell us T1w was not found
+            print("This seqinfo is not the MPRAGE or rs-fMRI:", s.series_description)
+        return info
+
+But what if we have a fieldmap? Not only do we need to name it correctly, but we
+also have to make sure it points to the BOLD data. We can do this quite
+flexibly using the special ``IntendedFor`` keyword. This keyword is set outside
+of the ``infotodict`` for loop and makes use of existing keys:
+
+
+.. code-block:: python
+
+    def create_key(template, outtype=('nii.gz',), annotation_classes=None):
+        if template is None or not template:
+            raise ValueError('Template must be a valid format string')
+        return template, outtype, annotation_classes
+
+    # Create Keys
+
+    # anatomical
+    t1w = create_key(
+       'sub-{subject}/ses-{session}/anat/sub-{subject}_ses-{session}_T1w')
+
+    # fMRI scans
+    rest_bbl = create_key(
+      'sub-{subject}/{session}/func/sub-{subject}_{session}_task-rest_acq-BBL_bold')
+
+    # fieldmaps
     b0_phase = create_key(
        'sub-{subject}/{session}/fmap/sub-{subject}_{session}_phasediff')
     b0_mag = create_key(
        'sub-{subject}/{session}/fmap/sub-{subject}_{session}_magnitude{item}')
-    pe_rev = create_key(
-        'sub-{subject}/{session}/fmap/sub-{subject}_{session}_acq-multiband_dir-j_epi')
-
-    # fmri scans
-    rest_mb = create_key(
-       'sub-{subject}/{session}/func/sub-{subject}_{session}_task-rest_acq-multiband_bold')
-    rest_sb = create_key(
-       'sub-{subject}/{session}/func/sub-{subject}_{session}_task-rest_acq-singleband_bold')
-    fracback = create_key(
-       'sub-{subject}/{session}/func/sub-{subject}_{session}_task-fracback_acq-singleband_bold')
-    face = create_key(
-       'sub-{subject}/{session}/func/sub-{subject}_{session}_task-face_acq-singleband_bold')
-
-    # ASL scans
-    asl = create_key(
-       'sub-{subject}/{session}/perf/sub-{subject}_{session}_asl')
-    asl_dicomref = create_key(
-       'sub-{subject}/{session}/perf/sub-{subject}_{session}_acq-ref_asl')
-    m0 = create_key(
-       'sub-{subject}/{session}/perf/sub-{subject}_{session}_m0')
-    mean_perf = create_key(
-       'sub-{subject}/{session}/perf/sub-{subject}_{session}_mean-perfusion')
 
 
+    # loop over the seqinfo table
     def infotodict(seqinfo):
 
-        last_run = len(seqinfo)
-
-        info = {t1w:[], t2w:[], dwi:[], b0_phase:[],
-                b0_mag:[], pe_rev:[], rest_mb:[], rest_sb:[],
-                fracback:[], asl_dicomref:[], face:[], asl:[],
-                m0:[], mean_perf:[]}
-
-        def get_latest_series(key, s):
-        #    if len(info[key]) == 0:
-            info[key].append(s.series_id)
-        #    else:
-        #        info[key] = [s.series_id]
-
-        for s in seqinfo:
-            protocol = s.protocol_name.lower()
-            if "mprage" in protocol:
-                get_latest_series(t1w,s)
-            elif "t2_sag" in protocol:
-                get_latest_series(t2w,s)
-            elif "b0map" in protocol and "M" in s.image_type:
-                info[b0_mag].append(s.series_id)
-            elif "b0map" in protocol and "P" in s.image_type:
-                info[b0_phase].append(s.series_id)
-            elif "topup_ref" in protocol:
-                get_latest_series(pe_rev, s)
-            elif "dti_multishell" in protocol and not s.is_derived:
-                get_latest_series(dwi, s)
-
-            elif s.series_description.endswith("_ASL"):
-                get_latest_series(asl, s)
-            elif protocol.startswith("asl_dicomref"):
-                get_latest_series(asl_dicomref, s)
-            elif s.series_description.endswith("_M0"):
-                get_latest_series(m0, s)
-            elif s.series_description.endswith("_MeanPerf"):
-                get_latest_series(mean_perf, s)
-
-            elif "fracback" in protocol:
-                get_latest_series(fracback, s)
-            elif "face" in protocol:
-                get_latest_series(face,s)
-            elif "rest" in protocol:
-                if "MB" in s.image_type:
-                    get_latest_series(rest_mb,s)
-                else:
-                    get_latest_series(rest_sb,s)
-
-            elif s.patient_id in s.dcm_dir_name:
-                get_latest_series(asl, s)
-
-            else:
-                print("Series not recognized!: ", s.protocol_name, s.dcm_dir_name)
-        return info
-
-    MetadataExtras = {
-        b0_phase: {
-            "EchoTime1": 0.00412,
-            "EchoTime2": 0.00658
-        },
-        asl: {
-            "PulseSequenceType": "3D_SPRIAL",
-            "PulseSequenceDetails" : "WIP" ,
-            "LabelingType": "PCASL",
-            "LabelingDuration": 1.8,
-            "PostLabelingDelay": 1.8,
-            "BackgroundSuppression": "Yes",
-            "M0":10,
-            "LabelingSlabLocation":"X",
-            "LabelingOrientation":"",
-            "LabelingDistance":2,
-            "AverageLabelingGradient": 34,
-            "SliceSelectiveLabelingGradient":45,
-            "AverageB1LabelingPulses": 0,
-            "LabelingSlabThickness":2,
-            "AcquisitionDuration":123,
-            "BackgroundSuppressionLength":2,
-            "BackgroundSuppressionPulseTime":2,
-            "VascularCrushingVenc": 2,
-            "PulseDuration": 1.8,
-            "InterPulseSpacing":4,
-            "PCASLType":"balanced",
-            "PASLType": "",
-            "LookLocker":"True",
-            "LabelingEfficiency":0.72,
-            "BolusCutOffFlag":"False",
-            "BolusCutOffTimingSequence":"False",
-            "BolusCutOffDelayTime":0,
-            "BolusCutOffTechnique":"False"
+        # the dictionary of keys and list of files they correspond to
+        # now contains two scans
+        info = {
+          t1w: [], rest_bbl: [], b0_mag: [], b0_phase: []
         }
-    }
+
+        # loop over each row of your seqinfo table
+        for s in seqinfo:
+
+            # if the series description contains "MPRAGE",
+            # add the DICOM identifier to the dictionary
+
+            if "MPRAGE" in s.series_description:
+                info[t1w].append(s.series_id)
+
+            elif "bbl1_restbold" in s.series_description:
+                info[rest_bbl].append(s.series_id)
+
+            elif "B0map" in s.series_description and "M" in s.image_type:
+                info[b0_mag].append(s)
+            elif "B0map" in s.series_description and "P" in s.image_type:
+                info[b0_phase].append(s)
+
+
+            # a print line to tell us T1w was not found
+            print("Protocol not found!:", s.series_description)
+        return info
 
     IntendedFor = {
         b0_phase: [
-            '{session}/func/sub-{subject}_{session}_task-rest_acq-multiband_bold.nii.gz',
-            '{session}/func/sub-{subject}_{session}_task-rest_acq-singleband_bold.nii.gz',
-            '{session}/func/sub-{subject}_{session}_task-fracback_acq-singleband_bold.nii.gz',
-            '{session}/func/sub-{subject}_{session}_task-face_acq-singleband_bold.nii.gz'
+            '{session}/func/sub-{subject}_{session}_task-rest_acq-BBL_bold.nii.gz'
         ],
-        b0_mag: [],
-        pe_rev: [
-            '{session}/dwi/sub-{subject}_{session}_acq-multiband_dwi.nii.gz',
+        b0_mag: [
+            '{session}/func/sub-{subject}_{session}_task-rest_acq-BBL_bold.nii.gz'
         ]
     }
 
-    def ReplaceSubject(label):
-        return label.lstrip("0")
+Notice that in this heuristic, we use the special ``{item}`` keyword in the key
+for the magnitude fieldmaps. This keeps us from having to write multiple keys.
+The keyword is iterated over automatically within the NIfTIs for this
+acquisition. Additionally, we access the ``image_type`` column when
+differentiating between the magnitude and phase fieldmaps.
 
+Lastly, the ``IntendedFor`` keyword: it's a dictionary, like ``info``,
+containing the keys for each of our fieldmaps, and the values for each key
+are the files we expect this fieldmap to correct. In this case we must
+specifically list the files out. Update this heuristic upload it to Flywheel,
+and try out curation with it.
 
-    def ReplaceSession(label):
-        return label.lstrip("0")
+Wrapping Up
+-----------
 
-
-    def AttachToSession():
-
-        # example: uploading a json file
-        import json
-
-        adict = {
-            "id": "04",
-            "name": "foo",
-            "scan": "blah"
-        }
-
-        json_object = json.dumps(adict, indent = 4) # json.dumps() returns a string!
-
-        attachment1 = {
-            'name': 'jsonexample.json',
-            'data': json_object,
-            'type': 'application/json'
-        }
-
-        return attachment1
-
-
-    def AttachToProject():
-
-        # example: uploading a single CHANGES file
-
-        attachment1 = {
-            'name': 'CHANGES',
-            'data': 'This is a CHANGES file!',
-            'type': 'text/plain'
-        }
-
-        return attachment1
+In this walkthrough, you should have learned how to curate your data with
+``fw-heudiconv``, starting with discovering data in your DICOM headers, crafting
+a heuristic for a single T1w image, and then applying it to a session. Next,
+we went over how to add more images, including how to point fieldmaps to BOLD
+scans. Now, you're ready to investigate more functionality of ``fw-heudiconv``.
+Take a look at the :ref:`heuristic` page for an in-depth look at what more
+features fw-heudiconv curation can offer, and the :ref:`tips` page for
+inspiration on how to come up with more creative solutions.
