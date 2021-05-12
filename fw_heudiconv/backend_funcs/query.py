@@ -1,7 +1,9 @@
 import logging
 import collections
 import os
-from nibabel.nicom.dicomwrappers import wrapper_from_data
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)
+    from nibabel.nicom.dicomwrappers import wrapper_from_data
 
 from heudiconv import utils
 
