@@ -8,7 +8,11 @@ FlywheelTools: Software for HeuDiConv-Style BIDS Curation On Flywheel
   :alt: Documentation Status
 
 .. image:: https://circleci.com/gh/PennLINC/fw-heudiconv.svg?style=shield
-    :target: https://circleci.com/gh/PennLINC/fw-heudiconv
+  :target: https://circleci.com/gh/PennLINC/fw-heudiconv
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4752798.svg?style=shield
+  :target: https://zenodo.org/record/4752798#.YJwSt5NKg8N
+
 
 ``FlywheelTools`` is a suite of software tools for curating your data into BIDS on Flywheel. It's comprised of 2 parts:
 
