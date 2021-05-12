@@ -223,6 +223,12 @@ uncheck it after this test run.
 When you're ready, hit "Run Gear"! Take note of the analysis' name to refer back
 to  later.
 
+To monitor progress of the gear, click on the session’s “Provenance” tab. A
+grey pause symbol indicates that the job is queued, a blue cog indicates that
+it is running, and a green check or red triangle indicates that the gear has
+finished, successfully or unsuccessfully, respectively; refresh the page to
+update the status of running gears.
+
 At the command line, this achieved with the following command:
 
 .. code-block:: python

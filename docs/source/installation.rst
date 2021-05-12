@@ -1,6 +1,13 @@
 Installation
 =============
 
+``fw-heudiconv`` can be run in the Flywheel GUI as a gear, or locally using the
+Command Line Interface distributed using `pip`. ``flaudit`` can `only` be run
+in the Flywheel GUI.
+
+.. note::
+    FlywheelTools are intended for use with a Flywheel site. At the University of
+    Pennsylvania, our site is available at `upenn.flywheel.io <https://upenn.flywheel.io>`_.
 
 To use locally, follow instructions below to set up your system for using ``fw-heudiconv`` on your machine:
 
