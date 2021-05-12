@@ -231,7 +231,7 @@ def download_bids(
     # Project's subject data
     for fi in to_download['project']:
 
-        if fi['BIDS'] is not None:
+        if fi['BIDS'] is not None and get_nested(fi, 'BIDS', 'Path') is not None:
             output_path = get_nested(fi, 'BIDS', 'Path')
             path = str(Path(output_path, fi['name']))
 
@@ -252,7 +252,7 @@ def download_bids(
             if fi['name'] not in attachments:
                 continue
 
-        if fi['BIDS'] is not None:
+        if fi['BIDS'] is not None and get_nested(fi, 'BIDS', 'Path') is not None:
 
             output_path = get_nested(fi, 'BIDS', 'Path')
             path = str(Path(output_path, fi['name']))
@@ -272,7 +272,7 @@ def download_bids(
             if not any([re.search(att, fi['name']) for att in attachments]):
                 continue
 
-        if fi['BIDS'] is not None:
+        if fi['BIDS'] is not None and get_nested(fi, 'BIDS', 'Path') is not None:
             output_path = Path(root_path, get_nested(fi, 'BIDS', 'Path'))
             path = str(Path(output_path, fi['name']))
 
