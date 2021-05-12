@@ -1,6 +1,7 @@
 import logging
 import collections
 import os
+import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)
     from nibabel.nicom.dicomwrappers import wrapper_from_data
