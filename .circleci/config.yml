@@ -38,11 +38,11 @@ jobs:
             cd /tmp/validator/bids-validator && \
             yarn --ignore-engines && \
             cd bids-validator && npm install -g
-            # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip
+            # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.6.5/fw-linux_amd64-14.6.5.zip
             cd /tmp
             mkdir -p /tmp/fw_cli && \
             cd /tmp/fw_cli
-            wget https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip -O fw-bin.zip
+            wget https://storage.googleapis.com/flywheel-dist/cli/14.6.5/fw-linux_amd64-14.6.5.zip -O fw-bin.zip
             unzip fw-bin.zip
             sudo mv /tmp/fw_cli/linux_amd64/fw /usr/local/bin
       - persist_to_workspace:
