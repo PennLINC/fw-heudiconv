@@ -18,7 +18,7 @@ RUN apt-get -y update && apt-get install -y zip nodejs
 RUN npm install -g bids-validator
 RUN python3 -m pip install --upgrade pip
 RUN pip install --no-cache nipype pathvalidate
-RUN pip install --no-cache flywheel-sdk==11.*
+RUN pip install --no-cache flywheel-sdk~=14.6.5
 
 COPY . /src
 
