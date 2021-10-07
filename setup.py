@@ -7,7 +7,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="fw_heudiconv",
-    version="0.4.0",
+    version="0.4.1",
     author="Tinashe M. Tapera, Matt Cieslak, Harsha Kethineni",
     author_email="tinashemtapera@gmail.com",
     description="Use heudiconv-like heuristics for BIDS curation on flywheel",
@@ -17,7 +17,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "flywheel-sdk~=14.6.5",
-        "heudiconv",
+        "heudiconv==0.8.0",
         "pandas",
         "bids-validator",
         "validators",
