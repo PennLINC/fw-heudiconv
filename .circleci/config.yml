@@ -30,9 +30,9 @@ jobs:
             conda install -c conda-forge -y datalad
             # Add nodejs and the validator
             conda install nodejs
-            npm install -g yarn && \
-            # get the validator 
-            npm install -g yarn && \
+            npm install -g yarn
+            # get the validator
+            npm install @octokit/core 
             npm install -g bids-validator@1.6.2
             cd /tmp
             mkdir -p /tmp/fw_cli && \
