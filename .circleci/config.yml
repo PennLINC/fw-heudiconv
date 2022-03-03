@@ -32,6 +32,7 @@ jobs:
             conda install nodejs
             npm install -g yarn
             # get the validator
+            npm install encoding
             npm install @octokit/core 
             npm install -g bids-validator@1.6.2
             cd /tmp
