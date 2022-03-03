@@ -14,6 +14,7 @@ echo Building docker image:
 echo docker build -t pennbbl/fw-heudiconv:$VERSION .
 
 docker build -t pennbbl/fw-heudiconv:$VERSION .
+docker push pennbbl/fw-heudiconv:$VERSION .
 
 echo Testing local help call...
 
