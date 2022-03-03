@@ -27,18 +27,11 @@ jobs:
             conda info -a
             conda create -n flywheel python=3.7
             source activate flywheel
-            conda install -c conda-forge -y datalad
+            #conda install -c conda-forge -y datalad
             # Add nodejs and the validator
             conda install nodejs
             npm install -g yarn && \
-            mkdir -p /tmp/validator && \
-            cd /tmp/validator && \
-            git clone  -b 'master' --single-branch --depth 1 \
-                --single-branch https://github.com/bids-standard/bids-validator.git  && \
-            cd /tmp/validator/bids-validator && \
-            yarn --ignore-engines && \
-            cd bids-validator && npm install -g
-            # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip
+            npm install -g bids-validator@1.6.2
             cd /tmp
             mkdir -p /tmp/fw_cli && \
             cd /tmp/fw_cli
