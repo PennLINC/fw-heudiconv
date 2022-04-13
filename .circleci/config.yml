@@ -27,13 +27,13 @@ jobs:
             conda info -a
             conda create -n flywheel python=3.7
             source activate flywheel
-            conda install -c conda-forge -y datalad
+
             # Add nodejs and the validator
             mkdir -p /tmp/validator
             sudo apt update
             sudo apt install nodejs npm
-            npm install -g yarn 
-            npm install -g bids-validator
+            sudo npm install -g yarn --unsafe-perm=true --allow-root
+            sudo npm install -g bids-validator --unsafe-perm=true --allow-root
             # install fw cli https://storage.googleapis.com/flywheel-dist/cli/14.4.4/fw-linux_amd64-14.4.4.zip
             cd /tmp
             mkdir -p /tmp/fw_cli && \
