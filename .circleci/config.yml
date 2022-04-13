@@ -59,7 +59,7 @@ jobs:
             fw login $FWAPIKEY
             export PATH=/tmp/miniconda/bin:$PATH
             source activate flywheel
-            pip install .[all]
+            pip install .
       - run:
           name: pytests
           command: |

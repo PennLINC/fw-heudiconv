@@ -17,7 +17,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "flywheel-sdk~=14.6.5",
-        "heudiconv==0.8.0",
         "pandas",
         "bids-validator",
         "validators",

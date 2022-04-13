@@ -6,11 +6,37 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)
     from nibabel.nicom.dicomwrappers import wrapper_from_data
 
-from heudiconv import utils
 
 CONVERTABLE_TYPES = ("bvec", "bval", "nifti")
 
 log = logging.getLogger(__name__)
+
+SEQINFO_FIELDS = [
+    'total_files_till_now',  # 0
+    'example_dcm_file',      # 1
+    'series_id',             # 2
+    'dcm_dir_name',          # 3
+    'series_files',          # 4
+    'unspecified',           # 5
+    'dim1', 'dim2', 'dim3', 'dim4', # 6, 7, 8, 9
+    'TR', 'TE',              # 10, 11
+    'protocol_name',         # 12
+    'is_motion_corrected',   # 13
+    'is_derived',            # 14
+    'patient_id',            # 15
+    'study_description',     # 16
+    'referring_physician_name', # 17
+    'series_description',    # 18
+    'sequence_name',         # 19
+    'image_type',            # 20
+    'accession_number',      # 21
+    'patient_age',           # 22
+    'patient_sex',           # 23
+    'date',                  # 24
+    'series_uid',            # 25
+    'time',                  # 26
+]
+SeqInfo = namedtuple('SeqInfo', SEQINFO_FIELDS)
 
 
 def acquisition_to_heudiconv(client, acq, context):
@@ -57,7 +83,7 @@ def acquisition_to_heudiconv(client, acq, context):
         mw = wrapper_from_data(info)
 
         log.debug('uid: %s', info.get("SeriesInstanceUID"))
-        to_convert.append(utils.SeqInfo(
+        to_convert.append(SeqInfo(
             context['total'],
             zip_info.members[0].path if zip_info else None,
             acq.id,
