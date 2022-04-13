@@ -34,7 +34,7 @@ SEQINFO_FIELDS = [
     'patient_sex',           # 23
     'date',                  # 24
     'series_uid',            # 25
-    'time',                  # 26
+    #'time',                  # 26
 ]
 SeqInfo = collections.namedtuple('SeqInfo', SEQINFO_FIELDS)
 
