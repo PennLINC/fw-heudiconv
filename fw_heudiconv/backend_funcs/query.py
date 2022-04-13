@@ -36,7 +36,7 @@ SEQINFO_FIELDS = [
     'series_uid',            # 25
     'time',                  # 26
 ]
-SeqInfo = namedtuple('SeqInfo', SEQINFO_FIELDS)
+SeqInfo = collections.namedtuple('SeqInfo', SEQINFO_FIELDS)
 
 
 def acquisition_to_heudiconv(client, acq, context):
