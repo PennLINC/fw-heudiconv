@@ -23,7 +23,8 @@ setuptools.setup(
         "pathvalidate",
         "pytest",
         "pytest-cov",
-        "nibabel"
+        "nibabel",
+        "heudiconv"
     ],
     classifiers=[
         "Programming Language :: Python :: 3.6",
