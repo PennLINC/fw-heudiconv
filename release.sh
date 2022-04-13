@@ -14,6 +14,7 @@ echo Building docker image:
 echo docker build -t pennbbl/fw-heudiconv:$VERSION .
 
 docker build -t pennbbl/fw-heudiconv:$VERSION .
+docker push pennbbl/fw-heudiconv:$VERSION
 
 echo Testing local help call...
 
@@ -28,7 +29,11 @@ fi
 echo Uploading to pip...
 
 python setup.py sdist
+<<<<<<< HEAD
 twine upload dist/* --skip-existing
+=======
+twine upload --skip-existing dist/*
+>>>>>>> 451d0170cd190ca6cceb86def6dc51bc45a73802
 
 echo Uploading gear...
 

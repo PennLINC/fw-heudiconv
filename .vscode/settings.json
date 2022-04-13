@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/opt/miniconda3/envs/flywheel/bin/python"
+    "python.pythonPath": "/opt/miniconda3/envs/flywheel/bin/python",
+    "restructuredtext.confPath": "${workspaceFolder}/docs/source"
 }
