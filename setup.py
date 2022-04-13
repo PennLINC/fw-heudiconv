@@ -7,7 +7,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="fw_heudiconv",
-    version="0.4.1",
+    version="0.4.3",
     author="Tinashe M. Tapera, Matt Cieslak, Harsha Kethineni",
     author_email="tinashemtapera@gmail.com",
     description="Use heudiconv-like heuristics for BIDS curation on flywheel",

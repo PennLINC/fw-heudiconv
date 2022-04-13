@@ -28,7 +28,7 @@ fi
 echo Uploading to pip...
 
 python setup.py sdist
-twine upload dist/*
+twine upload dist/* --skip-existing
 
 echo Uploading gear...
 
