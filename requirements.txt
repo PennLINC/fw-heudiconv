@@ -6,4 +6,5 @@ sphinx-argparse
 commonmark
 pathvalidate
 pytest
+nibabel
 pytest-cov
